@@ -1,2 +1,3 @@
-# textli-api
-Backend component for textli
+# Textli API - Encrypted Markdown Editor
+
+Backend component for Textli 
