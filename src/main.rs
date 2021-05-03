@@ -1,3 +1,5 @@
+mod authentication;
+mod endpoint;
 mod env;
 mod util;
 
