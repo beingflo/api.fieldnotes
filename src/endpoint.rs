@@ -1,4 +1,3 @@
-use crate::env::Config;
 use serde::Serialize;
 
 /// HTTP methods used in API.
@@ -80,7 +79,7 @@ pub struct DeleteNoteEndpoints {
 
 /// Get init endpoints.
 pub fn get_init_endpoints() -> InitEndpoints {
-    let base_url = Config::get().base_url;
+    let base_url = dotenv::var("BASE_URL").unwrap();
 
     let login_url = format!("{}/{}", base_url, "session");
     let signup_url = format!("{}/{}", base_url, "user");
@@ -93,7 +92,7 @@ pub fn get_init_endpoints() -> InitEndpoints {
 
 /// Get user endpoints.
 pub fn get_user_endpoints() -> UserEndpoints {
-    let base_url = Config::get().base_url;
+    let base_url = dotenv::var("BASE_URL").unwrap();
 
     let logout_url = format!("{}/{}", base_url, "session");
     let delete_user_url = format!("{}/{}", base_url, "user");
@@ -110,7 +109,7 @@ pub fn get_user_endpoints() -> UserEndpoints {
 
 // List notes endpoints.
 pub fn list_notes_endpoints(id: &str) -> NotesEndpoints {
-    let base_url = Config::get().base_url;
+    let base_url = dotenv::var("BASE_URL").unwrap();
 
     let get_note_url = format!("{}/{}/{}", base_url, "notes", id);
     let delete_note_url = format!("{}/{}/{}", base_url, "notes", id);
@@ -123,7 +122,7 @@ pub fn list_notes_endpoints(id: &str) -> NotesEndpoints {
 
 // Get note endpoints.
 pub fn get_note_endpoints(id: &str) -> GetNoteEndpoints {
-    let base_url = Config::get().base_url;
+    let base_url = dotenv::var("BASE_URL").unwrap();
 
     let update_note_url = format!("{}/{}/{}", base_url, "notes", id);
     let delete_note_url = format!("{}/{}/{}", base_url, "notes", id);
@@ -136,7 +135,7 @@ pub fn get_note_endpoints(id: &str) -> GetNoteEndpoints {
 
 // Delete note endpoints.
 pub fn delete_note_endpoints(id: &str) -> DeleteNoteEndpoints {
-    let base_url = Config::get().base_url;
+    let base_url = dotenv::var("BASE_URL").unwrap();
 
     let undelete_note_url = format!("{}/{}/{}", base_url, "notes/undelete", id);
 

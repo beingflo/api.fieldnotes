@@ -10,6 +10,8 @@ use warp::hyper::Body;
 use warp::reject::Reject;
 use warp::{Rejection, Reply};
 
+use sqlx::PgPool;
+
 use crate::endpoint;
 
 /// Cost of bcrypt hashing algorithm. Low due to compute power on the target platform.
@@ -26,7 +28,7 @@ pub struct UserCredentials {
 }
 
 /// Check if logged in and return available endpoints.
-pub async fn links(token: Option<String>) -> Result<impl warp::Reply, warp::Rejection> {
+pub async fn me(token: Option<String>, pool: PgPool) -> Result<impl warp::Reply, warp::Rejection> {
     info!("Calling 'links' endpoint");
 
     let user_endpoints = endpoint::get_user_endpoints();
@@ -45,4 +47,25 @@ pub async fn links(token: Option<String>) -> Result<impl warp::Reply, warp::Reje
 
     // Valid username and token
     Ok(warp::reply::json(&user_endpoints))
+}
+
+/// Custom type to be used for 401 response.
+#[derive(Debug)]
+struct Unauthorized;
+
+impl Reject for Unauthorized {}
+
+/// Turn rejections into appropriate status codes
+pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
+    if let Some(unauthorized) = err.find::<Unauthorized>() {
+        info!("Recovering {:?} and returning UNAUTHORIZED", unauthorized);
+        return Ok(StatusCode::UNAUTHORIZED);
+    }
+
+    if let Some(invalid_header) = err.find::<warp::reject::InvalidHeader>() {
+        info!("Recovering {:?} and returning UNAUTHORIZED", invalid_header);
+        return Ok(StatusCode::UNAUTHORIZED);
+    }
+
+    Err(err)
 }

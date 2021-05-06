@@ -1,17 +1,53 @@
 mod authentication;
 mod endpoint;
-mod env;
 mod util;
 
-use env::Config;
 use log::info;
+use sqlx::postgres::PgPoolOptions;
+use warp::Filter;
 
-fn main() {
+use std::net::SocketAddr;
+
+use dotenv::dotenv;
+
+#[tokio::main]
+async fn main() {
     pretty_env_logger::init();
     info!("Textli started");
 
-    let config = Config::get();
+    dotenv().ok();
 
-    println!("{:?}", config);
-    println!("{:?}", util::get_secure_token());
+    let pool = PgPoolOptions::new()
+        .max_connections(20)
+        .connect(&dotenv::var("DATABASE_URL").expect("DATABASE_URL env variable missing"))
+        .await
+        .expect("DB connection failed");
+
+    let with_db = warp::any().map(move || pool.clone());
+
+    let me = warp::get()
+        .and(warp::path("me"))
+        .and(warp::path::end())
+        .and(warp::filters::cookie::optional("token"))
+        .and(with_db.clone())
+        .and_then(authentication::me);
+
+    let cors = warp::cors()
+        .allow_origin(
+            dotenv::var("ALLOW_ORIGIN")
+                .expect("ALLOW_ORIGIN env variable missing")
+                .as_str(),
+        )
+        .allow_headers(vec!["content-type"])
+        .allow_credentials(true)
+        .allow_methods(vec!["GET", "POST", "PATCH", "DELETE"]);
+
+    let listen: SocketAddr = dotenv::var("LISTEN")
+        .expect("LISTEN env variable missing")
+        .parse()
+        .expect("Listen address invalid");
+
+    warp::serve(me.recover(authentication::handle_rejection).with(cors))
+        .run(listen)
+        .await;
 }
