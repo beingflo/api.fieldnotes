@@ -47,7 +47,5 @@ async fn main() {
         .parse()
         .expect("Listen address invalid");
 
-    warp::serve(me.recover(authentication::handle_rejection).with(cors))
-        .run(listen)
-        .await;
+    warp::serve(me.with(cors)).run(listen).await;
 }
