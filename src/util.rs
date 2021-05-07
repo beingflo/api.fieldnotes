@@ -6,9 +6,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 const TOKEN_LENGTH: usize = 32;
 
 /// Get current time in seconds since Unix Epoch for timestamps.
-pub fn get_current_time() -> u64 {
+pub fn get_current_time() -> i64 {
     let now = SystemTime::now();
-    now.duration_since(UNIX_EPOCH).unwrap().as_secs()
+    now.duration_since(UNIX_EPOCH).unwrap().as_secs() as i64
 }
 
 /// Get a secure token for session tokens or share links.

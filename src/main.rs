@@ -1,5 +1,6 @@
 mod authentication;
 mod endpoint;
+mod user;
 mod util;
 
 use log::info;
@@ -32,6 +33,12 @@ async fn main() {
         .and(with_db.clone())
         .and_then(authentication::me);
 
+    let signup = warp::post()
+        .and(warp::path("user"))
+        .and(warp::body::json())
+        .and(with_db.clone())
+        .and_then(user::signup);
+
     let cors = warp::cors()
         .allow_origin(
             dotenv::var("ALLOW_ORIGIN")
@@ -47,5 +54,5 @@ async fn main() {
         .parse()
         .expect("Listen address invalid");
 
-    warp::serve(me.with(cors)).run(listen).await;
+    warp::serve(me.or(signup).with(cors)).run(listen).await;
 }
