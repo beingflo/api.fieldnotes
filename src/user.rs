@@ -25,7 +25,7 @@ pub async fn signup(
 ) -> Result<impl warp::Reply, warp::Rejection> {
   info!("Creating user {}", user.name);
 
-  match user_exists(&user.name).await {
+  match user_exists(&pool, &user.name).await {
     Err(_) => return Ok(StatusCode::SERVICE_UNAVAILABLE),
     Ok(true) => {
       warn!("User {} already exists", user.name);
@@ -51,13 +51,36 @@ pub async fn signup(
   Ok(StatusCode::OK)
 }
 
-async fn user_exists(name: &str) -> Result<bool, ()> {
-  // TODO
-  Ok(false)
+async fn user_exists(pool: &PgPool, name: &str) -> Result<bool, sqlx::Error> {
+  let result = query!(
+    "SELECT COUNT(id)
+    FROM users 
+    WHERE username = $1;",
+    name
+  )
+  .fetch_one(pool)
+  .await;
+
+  match result {
+    Ok(row) => {
+      if let Some(0) = row.count {
+        Ok(false)
+      } else {
+        info!("User already exists");
+        Ok(true)
+      }
+    }
+    Err(error) => Err(error),
+  }
 }
 
-async fn create_user(pool: &PgPool, name: &str, password_hash: &str, time: i64) {
-  query!(
+async fn create_user(
+  pool: &PgPool,
+  name: &str,
+  password_hash: &str,
+  time: i64,
+) -> Result<(), sqlx::Error> {
+  let query_result = query!(
     "INSERT INTO users (username, password, created_at)
      VALUES ($1, $2, $3);",
     name,
@@ -65,7 +88,17 @@ async fn create_user(pool: &PgPool, name: &str, password_hash: &str, time: i64) 
     time
   )
   .execute(pool)
-  .await
-  .unwrap();
-  // TODO error handling
+  .await;
+
+  // TODO Fix !== 1 case
+  match query_result {
+    Ok(result) => {
+      if result.rows_affected() == 1 {
+        Ok(())
+      } else {
+        Ok(())
+      }
+    }
+    Err(error) => Err(error),
+  }
 }
