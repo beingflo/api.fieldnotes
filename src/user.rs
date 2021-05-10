@@ -1,15 +1,21 @@
+use crate::error::ApiError;
 use crate::util::{get_current_time, get_secure_token};
 use bcrypt::{hash, verify};
 use log::{info, warn};
 use serde::Deserialize;
 use sqlx::{query, PgPool};
 use warp::http::{Response, StatusCode};
+use warp::reject;
 
-/// Cost of bcrypt hashing algorithm. Low due to compute power on the target platform.
-const BCRYPT_COST: u32 = 4;
+/// Cost of bcrypt hashing algorithm
+const BCRYPT_COST: u32 = 12;
 
 /// Time in seconds for a session token to expire: 2 Months.
 const TOKEN_EXPIRATION: u64 = 60 * 60 * 24 * 60;
+
+/// Default starting balance for new users
+/// 0.5 CHF
+const DEFAULT_BALANCE: i64 = 5000;
 
 /// This request form is expected for signup and login calls.
 #[derive(Deserialize)]
@@ -25,14 +31,12 @@ pub async fn signup(
 ) -> Result<impl warp::Reply, warp::Rejection> {
   info!("Creating user {}", user.name);
 
-  match user_exists(&pool, &user.name).await {
-    Err(_) => return Ok(StatusCode::SERVICE_UNAVAILABLE),
-    Ok(true) => {
-      warn!("User {} already exists", user.name);
-
-      return Ok(StatusCode::CONFLICT);
-    }
-    Ok(false) => {}
+  if user_exists(&pool, &user.name)
+    .await
+    .map_err(|e| reject::custom(e))?
+  {
+    warn!("User {} already exists", user.name);
+    return Ok(StatusCode::CONFLICT);
   }
 
   let hashed_password = hash(user.password, BCRYPT_COST);
@@ -42,7 +46,6 @@ pub async fn signup(
   }
 
   let hashed_password = hashed_password.unwrap();
-  println!("{}", hashed_password.len());
 
   let now = get_current_time();
 
@@ -51,7 +54,7 @@ pub async fn signup(
   Ok(StatusCode::OK)
 }
 
-async fn user_exists(pool: &PgPool, name: &str) -> Result<bool, sqlx::Error> {
+async fn user_exists(pool: &PgPool, name: &str) -> Result<bool, ApiError> {
   let result = query!(
     "SELECT COUNT(id)
     FROM users 
@@ -70,7 +73,7 @@ async fn user_exists(pool: &PgPool, name: &str) -> Result<bool, sqlx::Error> {
         Ok(true)
       }
     }
-    Err(error) => Err(error),
+    Err(error) => Err(ApiError::DBError(error)),
   }
 }
 
@@ -79,13 +82,14 @@ async fn create_user(
   name: &str,
   password_hash: &str,
   time: i64,
-) -> Result<(), sqlx::Error> {
+) -> Result<(), ApiError> {
   let query_result = query!(
-    "INSERT INTO users (username, password, created_at)
-     VALUES ($1, $2, $3);",
+    "INSERT INTO users (username, password, created_at, balance)
+     VALUES ($1, $2, $3, $4);",
     name,
     password_hash,
-    time
+    time,
+    DEFAULT_BALANCE
   )
   .execute(pool)
   .await;
@@ -96,9 +100,11 @@ async fn create_user(
       if result.rows_affected() == 1 {
         Ok(())
       } else {
-        Ok(())
+        Err(ApiError::ViolatedAssertion(
+          "Multiple rows affected in user check".to_string(),
+        ))
       }
     }
-    Err(error) => Err(error),
+    Err(error) => Err(ApiError::DBError(error)),
   }
 }

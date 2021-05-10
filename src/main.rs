@@ -1,5 +1,6 @@
 mod authentication;
 mod endpoint;
+mod error;
 mod user;
 mod util;
 
