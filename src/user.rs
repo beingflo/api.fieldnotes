@@ -49,7 +49,9 @@ pub async fn signup(
 
   let now = get_current_time();
 
-  create_user(&pool, &user.name, &hashed_password, now).await;
+  create_user(&pool, &user.name, &hashed_password, now)
+    .await
+    .map_err(|e| reject::custom(e))?;
 
   Ok(StatusCode::OK)
 }
