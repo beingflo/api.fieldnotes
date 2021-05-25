@@ -1,4 +1,7 @@
+use log::error;
 use thiserror::Error;
+use warp::http::StatusCode;
+use warp::{Rejection, Reply};
 
 #[derive(Error, Debug)]
 pub enum ApiError {
@@ -10,3 +13,21 @@ pub enum ApiError {
 }
 
 impl warp::reject::Reject for ApiError {}
+
+/// Turn rejections into appropriate status codes
+pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
+  if let Some(custom_error) = err.find::<ApiError>() {
+    match custom_error {
+      ApiError::DBError(db_error) => {
+        error!("Database error: {:?}", db_error);
+        return Ok(StatusCode::INTERNAL_SERVER_ERROR);
+      }
+      ApiError::ViolatedAssertion(assertion) => {
+        error!("Violated assertion: {:?}", assertion);
+        return Ok(StatusCode::INTERNAL_SERVER_ERROR);
+      }
+    }
+  }
+
+  Err(err)
+}

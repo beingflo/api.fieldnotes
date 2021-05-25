@@ -12,6 +12,8 @@ use std::net::SocketAddr;
 
 use dotenv::dotenv;
 
+use error::handle_rejection;
+
 #[tokio::main]
 async fn main() {
     pretty_env_logger::init();
@@ -55,5 +57,7 @@ async fn main() {
         .parse()
         .expect("Listen address invalid");
 
-    warp::serve(me.or(signup).with(cors)).run(listen).await;
+    warp::serve(me.or(signup).with(cors).recover(handle_rejection))
+        .run(listen)
+        .await;
 }
