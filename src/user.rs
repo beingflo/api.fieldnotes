@@ -1,11 +1,14 @@
 use crate::error::ApiError;
 use crate::util::{get_current_time, get_secure_token};
 use bcrypt::{hash, verify};
-use log::{info, warn};
+use log::{error, info, warn};
 use serde::Deserialize;
 use sqlx::{query, PgPool};
 use warp::http::{Response, StatusCode};
+use warp::hyper::header::SET_COOKIE;
+use warp::hyper::Body;
 use warp::reject;
+use warp::Reply;
 
 /// Cost of bcrypt hashing algorithm
 const BCRYPT_COST: u32 = 12;
@@ -49,11 +52,50 @@ pub async fn signup(
 
     let now = get_current_time();
 
-    create_user(&pool, &user.name, &hashed_password, now)
+    create_user(&pool, &user.name, &hashed_password, now as i64)
         .await
         .map_err(|e| reject::custom(e))?;
 
     Ok(StatusCode::OK)
+}
+
+/// Log in existing user, this sets username and token cookies for future requests.
+pub async fn login(
+    user: UserCredentials,
+    pool: PgPool,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    info!("Login user {}", user.name);
+
+    if !user_exists(&pool, &user.name)
+        .await
+        .map_err(|e| reject::custom(e))?
+    {
+        warn!("User {} doesn't exists", user.name);
+        return Ok(StatusCode::UNAUTHORIZED.into_response());
+    }
+
+    let password = get_password(&pool, &user.name)
+        .await
+        .map_err(|e| reject::custom(e))?;
+
+    match verify_password(&user.name, &user.password, &password)
+        .await
+        .map_err(|e| reject::custom(e))?
+    {
+        false => return Ok(StatusCode::UNAUTHORIZED.into_response()),
+        true => (),
+    }
+
+    let expires = get_current_time();
+    let expires = expires + TOKEN_EXPIRATION;
+
+    let token = get_secure_token();
+
+    store_token(&pool, &user.name, &token, expires)
+        .await
+        .map_err(|e| reject::custom(e))?;
+
+    Ok(get_cookie_headers(&user.name, &token))
 }
 
 async fn user_exists(pool: &PgPool, name: &str) -> Result<bool, ApiError> {
@@ -108,4 +150,66 @@ async fn create_user(
         }
         Err(error) => Err(ApiError::DBError(error)),
     }
+}
+
+/// Retrieve stored password hash for existing user.
+pub async fn get_password(pool: &PgPool, name: &str) -> Result<String, ApiError> {
+    let result = query!(
+        "SELECT password
+        FROM users 
+        WHERE username = $1;",
+        name
+    )
+    .fetch_one(pool)
+    .await?;
+
+    Ok(result.password)
+}
+
+/// Verify supplied password for user.
+async fn verify_password(name: &str, password: &str, hash: &str) -> Result<bool, ApiError> {
+    match verify(password, &hash) {
+        Err(err) => {
+            error!("Error while verifying password: {:?}", err);
+            Err(ApiError::ViolatedAssertion(
+                "brcypt verify error".to_string(),
+            ))
+        }
+        Ok(false) => {
+            warn!("User {} supplied wrong password", name);
+            Ok(false)
+        }
+        Ok(true) => {
+            info!("User {} supplied correct password", name);
+            Ok(true)
+        }
+    }
+}
+
+/// Add a new token to the user. User is expected to exist.
+pub async fn store_token(
+    pool: &PgPool,
+    name: &str,
+    token: &str,
+    expires: u64,
+) -> Result<(), ApiError> {
+    // TODO store token in new table
+    println!("storing token");
+    Ok(())
+}
+
+/// Get properly formatted cookie headers from name and token.
+fn get_cookie_headers(name: &str, token: &str) -> Response<Body> {
+    let response = Response::builder()
+        .status(StatusCode::OK)
+        .header(
+            SET_COOKIE,
+            format!("username={};HttpOnly;Max-Age={}", name, TOKEN_EXPIRATION),
+        )
+        .header(
+            SET_COOKIE,
+            format!("token={};HttpOnly;Max-Age={}", token, TOKEN_EXPIRATION),
+        );
+
+    response.body(Body::empty()).unwrap()
 }

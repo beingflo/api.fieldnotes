@@ -42,6 +42,12 @@ async fn main() {
         .and(with_db.clone())
         .and_then(user::signup);
 
+    let login = warp::post()
+        .and(warp::path("session"))
+        .and(warp::body::json())
+        .and(with_db.clone())
+        .and_then(user::login);
+
     let cors = warp::cors()
         .allow_origin(
             dotenv::var("ALLOW_ORIGIN")
@@ -57,7 +63,7 @@ async fn main() {
         .parse()
         .expect("Listen address invalid");
 
-    warp::serve(me.or(signup).with(cors).recover(handle_rejection))
+    warp::serve(me.or(signup).or(login).with(cors).recover(handle_rejection))
         .run(listen)
         .await;
 }
