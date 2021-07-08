@@ -1,5 +1,5 @@
 use crate::error::ApiError;
-use crate::util::{get_current_time, get_secure_token};
+use crate::util::{get_auth_token, get_current_time};
 use bcrypt::{hash, verify};
 use log::{error, info, warn};
 use serde::Deserialize;
@@ -86,12 +86,11 @@ pub async fn login(
         true => (),
     }
 
-    let expires = get_current_time();
-    let expires = expires + TOKEN_EXPIRATION;
+    let now = get_current_time();
 
-    let token = get_secure_token();
+    let token = get_auth_token();
 
-    store_token(&pool, &user.name, &token, expires)
+    store_token(&pool, &user.name, &token, now)
         .await
         .map_err(|e| reject::custom(e))?;
 
@@ -144,7 +143,7 @@ async fn create_user(
                 Ok(())
             } else {
                 Err(ApiError::ViolatedAssertion(
-                    "Multiple rows affected in user check".to_string(),
+                    "Multiple rows affected in user creation".to_string(),
                 ))
             }
         }
@@ -191,11 +190,30 @@ pub async fn store_token(
     pool: &PgPool,
     name: &str,
     token: &str,
-    expires: u64,
+    created_at: u64,
 ) -> Result<(), ApiError> {
-    // TODO store token in new table
-    println!("storing token");
-    Ok(())
+    let query_result = query!(
+        "INSERT INTO auth_tokens (token, created_at, user_id)
+        VALUES ($1, $2, (SELECT id FROM users WHERE username=$3));",
+        token,
+        created_at as i64,
+        name
+    )
+    .execute(pool)
+    .await;
+
+    match query_result {
+        Ok(result) => {
+            if result.rows_affected() == 1 {
+                Ok(())
+            } else {
+                Err(ApiError::ViolatedAssertion(
+                    "Multiple rows affected in token storing".to_string(),
+                ))
+            }
+        }
+        Err(error) => Err(ApiError::DBError(error)),
+    }
 }
 
 /// Get properly formatted cookie headers from name and token.
