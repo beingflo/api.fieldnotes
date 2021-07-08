@@ -200,16 +200,10 @@ pub async fn store_token(
 
 /// Get properly formatted cookie headers from name and token.
 fn get_cookie_headers(name: &str, token: &str) -> Response<Body> {
-    let response = Response::builder()
-        .status(StatusCode::OK)
-        .header(
-            SET_COOKIE,
-            format!("username={};HttpOnly;Max-Age={}", name, TOKEN_EXPIRATION),
-        )
-        .header(
-            SET_COOKIE,
-            format!("token={};HttpOnly;Max-Age={}", token, TOKEN_EXPIRATION),
-        );
+    let response = Response::builder().status(StatusCode::OK).header(
+        SET_COOKIE,
+        format!("token={};HttpOnly;Max-Age={}", token, TOKEN_EXPIRATION),
+    );
 
     response.body(Body::empty()).unwrap()
 }
