@@ -29,13 +29,6 @@ async fn main() {
 
     let with_db = warp::any().map(move || pool.clone());
 
-    let me = warp::get()
-        .and(warp::path("me"))
-        .and(warp::path::end())
-        .and(warp::filters::cookie::optional("token"))
-        .and(with_db.clone())
-        .and_then(authentication::me);
-
     let signup = warp::post()
         .and(warp::path("user"))
         .and(warp::body::json())
@@ -63,7 +56,7 @@ async fn main() {
         .parse()
         .expect("Listen address invalid");
 
-    warp::serve(me.or(signup).or(login).with(cors).recover(handle_rejection))
+    warp::serve(signup.or(login).with(cors).recover(handle_rejection))
         .run(listen)
         .await;
 }

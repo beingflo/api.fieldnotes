@@ -41,22 +41,6 @@ impl Endpoint {
     }
 }
 
-/// Endpoints returned on call to `me` endpoint without valid token
-#[derive(Serialize, Clone, Debug)]
-pub struct InitEndpoints {
-    login: Endpoint,
-    signup: Endpoint,
-}
-
-/// Endpoints returned on call to `login` endpoint or `me` endpoint with valid token
-#[derive(Serialize, Clone, Debug)]
-pub struct UserEndpoints {
-    logout: Endpoint,
-    delete_user: Endpoint,
-    list_notes: Endpoint,
-    save_note: Endpoint,
-}
-
 /// Endpoints returned on call to `list notes` endpoint.
 #[derive(Serialize, Clone, Debug)]
 pub struct NotesEndpoints {
@@ -75,36 +59,6 @@ pub struct GetNoteEndpoints {
 #[derive(Serialize, Clone, Debug)]
 pub struct DeleteNoteEndpoints {
     undelete: Endpoint,
-}
-
-/// Get init endpoints.
-pub fn get_init_endpoints() -> InitEndpoints {
-    let base_url = dotenv::var("BASE_URL").unwrap();
-
-    let login_url = format!("{}/{}", base_url, "session");
-    let signup_url = format!("{}/{}", base_url, "user");
-
-    InitEndpoints {
-        login: Endpoint::put(login_url),
-        signup: Endpoint::put(signup_url),
-    }
-}
-
-/// Get user endpoints.
-pub fn get_user_endpoints() -> UserEndpoints {
-    let base_url = dotenv::var("BASE_URL").unwrap();
-
-    let logout_url = format!("{}/{}", base_url, "session");
-    let delete_user_url = format!("{}/{}", base_url, "user");
-    let list_notes_url = format!("{}/{}", base_url, "notes");
-    let save_note_url = format!("{}/{}", base_url, "notes");
-
-    UserEndpoints {
-        logout: Endpoint::delete(logout_url),
-        delete_user: Endpoint::delete(delete_user_url),
-        list_notes: Endpoint::get(list_notes_url),
-        save_note: Endpoint::put(save_note_url),
-    }
 }
 
 // List notes endpoints.
