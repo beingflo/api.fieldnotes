@@ -14,7 +14,7 @@ use warp::Reply;
 const BCRYPT_COST: u32 = 12;
 
 /// Time in seconds for a session token to expire: 2 Months.
-const TOKEN_EXPIRATION: u64 = 60 * 60 * 24 * 60;
+pub const TOKEN_EXPIRATION: i64 = 60 * 60 * 24 * 60;
 
 /// Default starting balance for new users
 /// 0.5 CHF
@@ -30,11 +30,11 @@ pub struct UserCredentials {
 /// Sign up new user. This stores the user data in the db.
 pub async fn signup(
     user: UserCredentials,
-    pool: PgPool,
+    db: PgPool,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     info!("Creating user {}", user.name);
 
-    if user_exists(&pool, &user.name)
+    if user_exists(&db, &user.name)
         .await
         .map_err(|e| reject::custom(e))?
     {
@@ -52,21 +52,25 @@ pub async fn signup(
 
     let now = get_current_time();
 
-    create_user(&pool, &user.name, &hashed_password, now as i64)
+    create_user(&db, &user.name, &hashed_password, now as i64)
         .await
         .map_err(|e| reject::custom(e))?;
 
     Ok(StatusCode::OK)
 }
 
+/// test
+pub async fn test(user_id: i32, db: PgPool) -> Result<impl warp::Reply, warp::Rejection> {
+    info!("Creating user {}", user_id);
+
+    Ok(StatusCode::OK)
+}
+
 /// Log in existing user, this sets username and token cookies for future requests.
-pub async fn login(
-    user: UserCredentials,
-    pool: PgPool,
-) -> Result<impl warp::Reply, warp::Rejection> {
+pub async fn login(user: UserCredentials, db: PgPool) -> Result<impl warp::Reply, warp::Rejection> {
     info!("Login user {}", user.name);
 
-    if !user_exists(&pool, &user.name)
+    if !user_exists(&db, &user.name)
         .await
         .map_err(|e| reject::custom(e))?
     {
@@ -74,7 +78,7 @@ pub async fn login(
         return Ok(StatusCode::UNAUTHORIZED.into_response());
     }
 
-    let password = get_password(&pool, &user.name)
+    let password = get_password(&db, &user.name)
         .await
         .map_err(|e| reject::custom(e))?;
 
@@ -90,21 +94,21 @@ pub async fn login(
 
     let token = get_auth_token();
 
-    store_token(&pool, &user.name, &token, now)
+    store_token(&db, &user.name, &token, now)
         .await
         .map_err(|e| reject::custom(e))?;
 
     Ok(get_cookie_headers(&user.name, &token))
 }
 
-async fn user_exists(pool: &PgPool, name: &str) -> Result<bool, ApiError> {
+async fn user_exists(db: &PgPool, name: &str) -> Result<bool, ApiError> {
     let result = query!(
         "SELECT COUNT(id)
         FROM users 
         WHERE username = $1;",
         name
     )
-    .fetch_one(pool)
+    .fetch_one(db)
     .await;
 
     match result {
@@ -121,7 +125,7 @@ async fn user_exists(pool: &PgPool, name: &str) -> Result<bool, ApiError> {
 }
 
 async fn create_user(
-    pool: &PgPool,
+    db: &PgPool,
     name: &str,
     password_hash: &str,
     time: i64,
@@ -134,7 +138,7 @@ async fn create_user(
         time,
         DEFAULT_BALANCE
     )
-    .execute(pool)
+    .execute(db)
     .await;
 
     match query_result {
@@ -152,14 +156,14 @@ async fn create_user(
 }
 
 /// Retrieve stored password hash for existing user.
-pub async fn get_password(pool: &PgPool, name: &str) -> Result<String, ApiError> {
+pub async fn get_password(db: &PgPool, name: &str) -> Result<String, ApiError> {
     let result = query!(
         "SELECT password
         FROM users 
         WHERE username = $1;",
         name
     )
-    .fetch_one(pool)
+    .fetch_one(db)
     .await?;
 
     Ok(result.password)
@@ -187,19 +191,19 @@ async fn verify_password(name: &str, password: &str, hash: &str) -> Result<bool,
 
 /// Add a new token to the user. User is expected to exist.
 pub async fn store_token(
-    pool: &PgPool,
+    db: &PgPool,
     name: &str,
     token: &str,
-    created_at: u64,
+    created_at: i64,
 ) -> Result<(), ApiError> {
     let query_result = query!(
         "INSERT INTO auth_tokens (token, created_at, user_id)
         VALUES ($1, $2, (SELECT id FROM users WHERE username=$3));",
         token,
-        created_at as i64,
+        created_at,
         name
     )
-    .execute(pool)
+    .execute(db)
     .await;
 
     match query_result {

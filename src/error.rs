@@ -10,6 +10,9 @@ pub enum ApiError {
 
     #[error("{0}")]
     ViolatedAssertion(String),
+
+    #[error("Unauthorized")]
+    Unauthorized,
 }
 
 impl warp::reject::Reject for ApiError {}
@@ -25,6 +28,10 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
             ApiError::ViolatedAssertion(assertion) => {
                 error!("Violated assertion: {:?}", assertion);
                 return Ok(StatusCode::INTERNAL_SERVER_ERROR);
+            }
+            ApiError::Unauthorized => {
+                error!("Unauthorized access");
+                return Ok(StatusCode::UNAUTHORIZED);
             }
         }
     }

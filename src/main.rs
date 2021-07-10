@@ -29,11 +29,21 @@ async fn main() {
 
     let with_db = warp::any().map(move || pool.clone());
 
+    let is_authorized = warp::filters::cookie::cookie("token")
+        .and(with_db.clone())
+        .and_then(authentication::is_authorized);
+
     let signup = warp::post()
         .and(warp::path("user"))
         .and(warp::body::json())
         .and(with_db.clone())
         .and_then(user::signup);
+
+    let test = warp::get()
+        .and(warp::path("test"))
+        .and(is_authorized.clone())
+        .and(with_db.clone())
+        .and_then(user::test);
 
     let login = warp::post()
         .and(warp::path("session"))
@@ -56,7 +66,13 @@ async fn main() {
         .parse()
         .expect("Listen address invalid");
 
-    warp::serve(signup.or(login).with(cors).recover(handle_rejection))
-        .run(listen)
-        .await;
+    warp::serve(
+        signup
+            .or(test)
+            .or(login)
+            .with(cors)
+            .recover(handle_rejection),
+    )
+    .run(listen)
+    .await;
 }
