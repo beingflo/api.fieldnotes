@@ -5,8 +5,11 @@ use warp::http::{Response, StatusCode};
 use warp::hyper::header::SET_COOKIE;
 use warp::hyper::Body;
 
-/// Number of alphanumeric chars in secure tokens
+/// Number of alphanumeric chars in auth tokens
 const AUTH_TOKEN_LENGTH: usize = 64;
+
+/// Number of alphanumeric chars in note tokens
+const NOTE_TOKEN_LENGTH: usize = 16;
 
 /// Get current time in seconds since Unix Epoch for timestamps.
 pub fn get_current_time() -> i64 {
@@ -19,6 +22,15 @@ pub fn get_auth_token() -> String {
     rand::rngs::OsRng
         .sample_iter(&Alphanumeric)
         .take(AUTH_TOKEN_LENGTH)
+        .map(char::from)
+        .collect::<String>()
+}
+
+/// Get a secure token for session tokens or share links.
+pub fn get_note_token() -> String {
+    rand::rngs::OsRng
+        .sample_iter(&Alphanumeric)
+        .take(NOTE_TOKEN_LENGTH)
         .map(char::from)
         .collect::<String>()
 }

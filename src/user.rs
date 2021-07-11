@@ -48,7 +48,7 @@ pub async fn signup(
 
     let now = get_current_time();
 
-    create_user(&db, &user.name, &hashed_password, now as i64)
+    store_user(&user.name, &hashed_password, now as i64, &db)
         .await
         .map_err(|e| reject::custom(e))?;
 
@@ -67,7 +67,7 @@ pub async fn login(user: UserCredentials, db: PgPool) -> Result<impl warp::Reply
         return Ok(StatusCode::UNAUTHORIZED.into_response());
     }
 
-    let password = get_password(&db, &user.name)
+    let password = get_password(&user.name, &db)
         .await
         .map_err(|e| reject::custom(e))?;
 
@@ -123,11 +123,11 @@ async fn user_exists(name: &str, db: &PgPool) -> Result<bool, ApiError> {
     }
 }
 
-async fn create_user(
-    db: &PgPool,
+async fn store_user(
     name: &str,
     password_hash: &str,
     time: i64,
+    db: &PgPool,
 ) -> Result<(), ApiError> {
     let query_result = query!(
         "INSERT INTO users (username, password, created_at, balance)
@@ -155,7 +155,7 @@ async fn create_user(
 }
 
 /// Retrieve stored password hash for existing user.
-pub async fn get_password(db: &PgPool, name: &str) -> Result<String, ApiError> {
+pub async fn get_password(name: &str, db: &PgPool) -> Result<String, ApiError> {
     let result = query!(
         "SELECT password
         FROM users 

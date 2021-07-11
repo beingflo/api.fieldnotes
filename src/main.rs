@@ -1,6 +1,7 @@
 mod authentication;
 mod endpoint;
 mod error;
+mod note;
 mod user;
 mod util;
 
@@ -8,6 +9,7 @@ use log::info;
 use sqlx::postgres::PgPoolOptions;
 use warp::Filter;
 
+use std::collections::HashMap;
 use std::net::SocketAddr;
 
 use dotenv::dotenv;
@@ -31,7 +33,7 @@ async fn main() {
 
     let with_token = warp::filters::cookie::cookie("token");
 
-    let _with_user = with_token
+    let with_user = with_token
         .and(with_db.clone())
         .and_then(authentication::get_user_id);
 
@@ -59,6 +61,23 @@ async fn main() {
         .and(with_db.clone())
         .and_then(user::login);
 
+    //let list_notes = warp::get()
+    //    .and(warp::path("notes"))
+    //    .and(warp::path::end())
+    //    .and(is_authorized.clone())
+    //    .and(warp::query::<HashMap<String, String>>())
+    //    .and(with_db.clone())
+    //    .and_then(note::list_notes);
+
+    let save_note = warp::post()
+        .and(warp::path("notes"))
+        .and(warp::path::end())
+        .and(is_authorized.clone())
+        .and(with_user)
+        .and(warp::body::json())
+        .and(with_db.clone())
+        .and_then(note::save_note);
+
     let cors = warp::cors()
         .allow_origin(
             dotenv::var("ALLOW_ORIGIN")
@@ -78,6 +97,7 @@ async fn main() {
         signup
             .or(login)
             .or(logout)
+            .or(save_note)
             .with(cors)
             .recover(handle_rejection),
     )
