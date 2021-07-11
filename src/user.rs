@@ -98,7 +98,7 @@ pub async fn login(user: UserCredentials, db: PgPool) -> Result<impl warp::Reply
         .await
         .map_err(|e| reject::custom(e))?;
 
-    Ok(get_cookie_headers(&user.name, &token))
+    Ok(get_cookie_headers(&token))
 }
 
 async fn user_exists(db: &PgPool, name: &str) -> Result<bool, ApiError> {
@@ -221,7 +221,7 @@ pub async fn store_token(
 }
 
 /// Get properly formatted cookie headers from name and token.
-fn get_cookie_headers(name: &str, token: &str) -> Response<Body> {
+fn get_cookie_headers(token: &str) -> Response<Body> {
     let response = Response::builder().status(StatusCode::OK).header(
         SET_COOKIE,
         format!("token={};HttpOnly;Max-Age={}", token, TOKEN_EXPIRATION),
