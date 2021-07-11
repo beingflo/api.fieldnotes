@@ -7,23 +7,7 @@ use warp::reject;
 
 /// Checks if user has proper authorization for request.
 pub async fn is_authorized(token: String, db: PgPool) -> Result<i32, warp::Rejection> {
-    let result = query!(
-        "SELECT user_id, created_at
-        FROM auth_tokens 
-        WHERE token = $1",
-        token
-    )
-    .fetch_optional(&db)
-    .await
-    .map_err(|e| reject::custom(ApiError::DBError(e)))?;
-
-    let (user_id, created_at) = match result {
-        Some(tok) => (tok.user_id, tok.created_at),
-        None => {
-            warn!("Invalid token {}", token);
-            return Err(warp::reject::custom(ApiError::Unauthorized));
-        }
-    };
+    let (user_id, created_at) = get_auth_token_info(&token, &db).await?;
 
     let now = get_current_time();
 
@@ -33,16 +17,42 @@ pub async fn is_authorized(token: String, db: PgPool) -> Result<i32, warp::Rejec
     } else {
         warn!("Token expired for user {}", user_id);
 
-        query!(
-            "DELETE
-            FROM auth_tokens 
-            WHERE token = $1",
-            token
-        )
-        .execute(&db)
-        .await
-        .map_err(|e| reject::custom(ApiError::DBError(e)))?;
+        delete_auth_token(&token, &db).await?;
 
         Err(warp::reject::custom(ApiError::Unauthorized))
     }
+}
+
+// Get user_id and creation date of provided token
+async fn get_auth_token_info(token: &str, db: &PgPool) -> Result<(i32, i64), warp::Rejection> {
+    match query!(
+        "SELECT user_id, created_at
+        FROM auth_tokens 
+        WHERE token = $1",
+        token
+    )
+    .fetch_optional(db)
+    .await
+    .map_err(|e| reject::custom(ApiError::DBError(e)))?
+    {
+        Some(tok) => Ok((tok.user_id, tok.created_at)),
+        None => {
+            warn!("Invalid token {}", token);
+            return Err(warp::reject::custom(ApiError::Unauthorized));
+        }
+    }
+}
+
+// Delete provided auth token from db
+async fn delete_auth_token(token: &str, db: &PgPool) -> Result<(), ApiError> {
+    query!(
+        "DELETE
+        FROM auth_tokens 
+        WHERE token = $1",
+        &token
+    )
+    .execute(db)
+    .await?;
+
+    Ok(())
 }
