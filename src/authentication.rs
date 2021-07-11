@@ -1,10 +1,9 @@
 use crate::error::ApiError;
 use crate::user::TOKEN_EXPIRATION;
 use crate::util::get_current_time;
-use log::{error, info, warn};
+use log::{info, warn};
 use sqlx::{query, PgPool};
 use warp::reject;
-use warp::Reply;
 
 /// Checks if user has proper authorization for request.
 pub async fn is_authorized(token: String, db: PgPool) -> Result<i32, warp::Rejection> {
@@ -33,7 +32,17 @@ pub async fn is_authorized(token: String, db: PgPool) -> Result<i32, warp::Rejec
         Ok(user_id)
     } else {
         warn!("Token expired for user {}", user_id);
-        // TODO delete token and overwrite cookie
+
+        query!(
+            "DELETE
+            FROM auth_tokens 
+            WHERE token = $1",
+            token
+        )
+        .execute(&db)
+        .await
+        .map_err(|e| reject::custom(ApiError::DBError(e)))?;
+
         Err(warp::reject::custom(ApiError::Unauthorized))
     }
 }
