@@ -29,9 +29,16 @@ async fn main() {
 
     let with_db = warp::any().map(move || pool.clone());
 
-    let is_authorized = warp::filters::cookie::cookie("token")
+    let with_token = warp::filters::cookie::cookie("token");
+
+    let _with_user = with_token
         .and(with_db.clone())
-        .and_then(authentication::is_authorized);
+        .and_then(authentication::get_user_id);
+
+    let is_authorized = with_token
+        .and(with_db.clone())
+        .and_then(authentication::is_authorized)
+        .untuple_one();
 
     let signup = warp::post()
         .and(warp::path("user"))
@@ -39,11 +46,12 @@ async fn main() {
         .and(with_db.clone())
         .and_then(user::signup);
 
-    let test = warp::get()
-        .and(warp::path("test"))
+    let logout = warp::delete()
+        .and(warp::path("session"))
         .and(is_authorized.clone())
+        .and(with_token)
         .and(with_db.clone())
-        .and_then(user::test);
+        .and_then(user::logout);
 
     let login = warp::post()
         .and(warp::path("session"))
@@ -68,8 +76,8 @@ async fn main() {
 
     warp::serve(
         signup
-            .or(test)
             .or(login)
+            .or(logout)
             .with(cors)
             .recover(handle_rejection),
     )

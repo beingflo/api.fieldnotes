@@ -1,20 +1,16 @@
+use crate::authentication::{delete_auth_token, store_auth_token, TOKEN_EXPIRATION};
 use crate::error::ApiError;
-use crate::util::{get_auth_token, get_current_time};
+use crate::util::{get_auth_token, get_cookie_headers, get_current_time};
 use bcrypt::{hash, verify};
 use log::{error, info, warn};
 use serde::Deserialize;
 use sqlx::{query, PgPool};
-use warp::http::{Response, StatusCode};
-use warp::hyper::header::SET_COOKIE;
-use warp::hyper::Body;
+use warp::http::StatusCode;
 use warp::reject;
 use warp::Reply;
 
 /// Cost of bcrypt hashing algorithm
 const BCRYPT_COST: u32 = 12;
-
-/// Time in seconds for a session token to expire: 2 Months.
-pub const TOKEN_EXPIRATION: i64 = 60 * 60 * 24 * 60;
 
 /// Default starting balance for new users
 /// 0.5 CHF
@@ -34,7 +30,7 @@ pub async fn signup(
 ) -> Result<impl warp::Reply, warp::Rejection> {
     info!("Creating user {}", user.name);
 
-    if user_exists(&db, &user.name)
+    if user_exists(&user.name, &db)
         .await
         .map_err(|e| reject::custom(e))?
     {
@@ -59,18 +55,11 @@ pub async fn signup(
     Ok(StatusCode::OK)
 }
 
-/// test
-pub async fn test(user_id: i32, db: PgPool) -> Result<impl warp::Reply, warp::Rejection> {
-    info!("Creating user {}", user_id);
-
-    Ok(StatusCode::OK)
-}
-
 /// Log in existing user, this sets username and token cookies for future requests.
 pub async fn login(user: UserCredentials, db: PgPool) -> Result<impl warp::Reply, warp::Rejection> {
     info!("Login user {}", user.name);
 
-    if !user_exists(&db, &user.name)
+    if !user_exists(&user.name, &db)
         .await
         .map_err(|e| reject::custom(e))?
     {
@@ -94,14 +83,24 @@ pub async fn login(user: UserCredentials, db: PgPool) -> Result<impl warp::Reply
 
     let token = get_auth_token();
 
-    store_token(&db, &user.name, &token, now)
+    store_auth_token(&db, &user.name, &token, now)
         .await
         .map_err(|e| reject::custom(e))?;
 
-    Ok(get_cookie_headers(&token))
+    Ok(get_cookie_headers(&token, TOKEN_EXPIRATION))
 }
 
-async fn user_exists(db: &PgPool, name: &str) -> Result<bool, ApiError> {
+/// Log out user. This deletes auth_token and overrides existing http-only cookies.
+pub async fn logout(token: String, db: PgPool) -> Result<impl warp::Reply, warp::Rejection> {
+    info!("Log out user");
+
+    delete_auth_token(&token, &db).await?;
+
+    // Set cookies empty and max-age 0 to force expiration
+    Ok(get_cookie_headers("", 0))
+}
+
+async fn user_exists(name: &str, db: &PgPool) -> Result<bool, ApiError> {
     let result = query!(
         "SELECT COUNT(id)
         FROM users 
@@ -187,45 +186,4 @@ async fn verify_password(name: &str, password: &str, hash: &str) -> Result<bool,
             Ok(true)
         }
     }
-}
-
-/// Add a new token to the user. User is expected to exist.
-pub async fn store_token(
-    db: &PgPool,
-    name: &str,
-    token: &str,
-    created_at: i64,
-) -> Result<(), ApiError> {
-    let query_result = query!(
-        "INSERT INTO auth_tokens (token, created_at, user_id)
-        VALUES ($1, $2, (SELECT id FROM users WHERE username=$3));",
-        token,
-        created_at,
-        name
-    )
-    .execute(db)
-    .await;
-
-    match query_result {
-        Ok(result) => {
-            if result.rows_affected() == 1 {
-                Ok(())
-            } else {
-                Err(ApiError::ViolatedAssertion(
-                    "Multiple rows affected in token storing".to_string(),
-                ))
-            }
-        }
-        Err(error) => Err(ApiError::DBError(error)),
-    }
-}
-
-/// Get properly formatted cookie headers from name and token.
-fn get_cookie_headers(token: &str) -> Response<Body> {
-    let response = Response::builder().status(StatusCode::OK).header(
-        SET_COOKIE,
-        format!("token={};HttpOnly;Max-Age={}", token, TOKEN_EXPIRATION),
-    );
-
-    response.body(Body::empty()).unwrap()
 }

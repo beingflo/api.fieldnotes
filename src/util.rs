@@ -1,6 +1,9 @@
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use std::time::{SystemTime, UNIX_EPOCH};
+use warp::http::{Response, StatusCode};
+use warp::hyper::header::SET_COOKIE;
+use warp::hyper::Body;
 
 /// Number of alphanumeric chars in secure tokens
 const AUTH_TOKEN_LENGTH: usize = 64;
@@ -18,4 +21,14 @@ pub fn get_auth_token() -> String {
         .take(AUTH_TOKEN_LENGTH)
         .map(char::from)
         .collect::<String>()
+}
+
+/// Get properly formatted cookie headers from name and token.
+pub fn get_cookie_headers(token: &str, expiration: i64) -> Response<Body> {
+    let response = Response::builder().status(StatusCode::OK).header(
+        SET_COOKIE,
+        format!("token={};HttpOnly;Max-Age={}", token, expiration),
+    );
+
+    response.body(Body::empty()).unwrap()
 }
