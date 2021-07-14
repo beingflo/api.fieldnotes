@@ -4,8 +4,9 @@ use crate::util::{get_current_time, get_note_token};
 use log::info;
 use serde::{Deserialize, Serialize};
 use sqlx::{query, PgPool};
+use tokio_stream::StreamExt;
 
-/// Request to save note.
+/// Request to save note
 #[derive(Deserialize)]
 pub struct SaveRequest {
     title: String,
@@ -13,7 +14,7 @@ pub struct SaveRequest {
     content: String,
 }
 
-/// Response to save / update note.
+/// Response to save / update note
 #[derive(Serialize)]
 pub struct SaveNoteResponse {
     id: String,
@@ -21,7 +22,28 @@ pub struct SaveNoteResponse {
     _links: NoteEndpoints,
 }
 
-/// Save a note to db.
+/// DB note response
+#[derive(Serialize)]
+pub struct DBNoteResponse {
+    id: String,
+    modified_at: i64,
+    title: String,
+    tags: String,
+    content: String,
+}
+
+/// Response to list notes request
+#[derive(Serialize)]
+pub struct ListNoteResponse {
+    id: String,
+    modified_at: i64,
+    title: String,
+    tags: String,
+    content: String,
+    _links: NoteEndpoints,
+}
+
+/// Save a new note
 pub async fn save_note_handler(
     user_id: i32,
     note: SaveRequest,
@@ -47,7 +69,7 @@ pub async fn save_note_handler(
     }))
 }
 
-/// Save a note to db.
+/// Update an existing note
 pub async fn update_note_handler(
     token: String,
     user_id: i32,
@@ -71,6 +93,29 @@ pub async fn update_note_handler(
         modified_at: now,
         _links: get_note_endpoints(&token),
     }))
+}
+
+/// List all notes
+pub async fn list_notes_handler(
+    user_id: i32,
+    db: PgPool,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    info!("Listing notes for user {}", user_id);
+
+    let notes = list_notes(user_id, &db).await?;
+    let notes_with_links: Vec<ListNoteResponse> = notes
+        .into_iter()
+        .map(|note| ListNoteResponse {
+            id: note.id.clone(),
+            modified_at: note.modified_at,
+            title: note.title,
+            tags: note.tags,
+            content: note.content,
+            _links: get_note_endpoints(&note.id),
+        })
+        .collect();
+
+    Ok(warp::reply::json(&notes_with_links))
 }
 
 async fn store_note(
@@ -132,4 +177,28 @@ async fn update_note(
             "Multiple rows affected when updating note".to_string(),
         ))
     }
+}
+
+async fn list_notes(user_id: i32, db: &PgPool) -> Result<Vec<DBNoteResponse>, ApiError> {
+    let mut rows = query!(
+        "SELECT token, modified_at, title, tags, content
+        FROM notes
+        WHERE user_id = $1",
+        user_id
+    )
+    .fetch(db);
+
+    let mut notes: Vec<DBNoteResponse> = Vec::new();
+
+    while let Some(note) = rows.try_next().await? {
+        notes.push(DBNoteResponse {
+            id: note.token,
+            modified_at: note.modified_at,
+            title: note.title,
+            tags: note.tags,
+            content: note.content,
+        });
+    }
+
+    Ok(notes)
 }

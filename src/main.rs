@@ -60,12 +60,13 @@ async fn main() {
         .and(with_db.clone())
         .and_then(user::login);
 
-    //let list_notes = warp::get()
-    //    .and(warp::path("notes"))
-    //    .and(warp::path::end())
-    //    .and(is_authorized.clone())
-    //    .and(with_db.clone())
-    //    .and_then(note::list_notes);
+    let list_notes = warp::get()
+        .and(warp::path("notes"))
+        .and(warp::path::end())
+        .and(is_authorized.clone())
+        .and(with_user.clone())
+        .and(with_db.clone())
+        .and_then(note::list_notes_handler);
 
     let save_note = warp::post()
         .and(warp::path("notes"))
@@ -104,6 +105,7 @@ async fn main() {
         signup
             .or(login)
             .or(logout)
+            .or(list_notes)
             .or(save_note)
             .or(update_note)
             .with(cors)
