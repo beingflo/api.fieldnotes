@@ -86,6 +86,14 @@ async fn main() {
         .and(with_db.clone())
         .and_then(note::update_note_handler);
 
+    let delete_note = warp::delete()
+        .and(warp::path!("notes" / String))
+        .and(warp::path::end())
+        .and(is_authorized.clone())
+        .and(with_user.clone())
+        .and(with_db.clone())
+        .and_then(note::delete_note_handler);
+
     let cors = warp::cors()
         .allow_origin(
             dotenv::var("ALLOW_ORIGIN")
@@ -108,6 +116,7 @@ async fn main() {
             .or(list_notes)
             .or(save_note)
             .or(update_note)
+            .or(delete_note)
             .with(cors)
             .recover(handle_rejection),
     )

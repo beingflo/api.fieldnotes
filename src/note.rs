@@ -5,6 +5,7 @@ use log::info;
 use serde::{Deserialize, Serialize};
 use sqlx::{query, PgPool};
 use tokio_stream::StreamExt;
+use warp::http::StatusCode;
 
 /// Request to save note
 #[derive(Deserialize)]
@@ -67,6 +68,21 @@ pub async fn save_note_handler(
         modified_at: now,
         _links: get_note_endpoints(&token),
     }))
+}
+
+/// Delete an existing note
+pub async fn delete_note_handler(
+    token: String,
+    user_id: i32,
+    db: PgPool,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    info!("Deleting note for user {}", user_id);
+
+    let now = get_current_time();
+
+    delete_note(user_id, &token, now, &db).await?;
+
+    Ok(StatusCode::OK)
 }
 
 /// Update an existing note
@@ -145,6 +161,34 @@ async fn store_note(
     Ok(())
 }
 
+async fn delete_note(
+    user_id: i32,
+    token: &str,
+    deleted_at: i64,
+    db: &PgPool,
+) -> Result<(), ApiError> {
+    let result = query!(
+        "UPDATE notes
+        SET deleted_at = $1
+        WHERE user_id = $2 AND token = $3 AND deleted_at IS NULL",
+        deleted_at,
+        user_id,
+        token,
+    )
+    .execute(db)
+    .await?;
+
+    if result.rows_affected() == 1 {
+        Ok(())
+    } else if result.rows_affected() == 0 {
+        Err(ApiError::Unauthorized)
+    } else {
+        Err(ApiError::ViolatedAssertion(
+            "Multiple rows affected when updating note".to_string(),
+        ))
+    }
+}
+
 async fn update_note(
     user_id: i32,
     token: &str,
@@ -157,7 +201,7 @@ async fn update_note(
     let result = query!(
         "UPDATE notes
         SET modified_at = $1, title = $2, tags = $3, content = $4
-        WHERE user_id = $5 AND token = $6",
+        WHERE user_id = $5 AND token = $6 AND deleted_at IS NULL",
         modified_at,
         title,
         tags,
@@ -183,7 +227,7 @@ async fn list_notes(user_id: i32, db: &PgPool) -> Result<Vec<DBNoteResponse>, Ap
     let mut rows = query!(
         "SELECT token, modified_at, title, tags, content
         FROM notes
-        WHERE user_id = $1",
+        WHERE user_id = $1 AND deleted_at IS NULL",
         user_id
     )
     .fetch(db);
