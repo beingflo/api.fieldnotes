@@ -85,6 +85,19 @@ pub async fn delete_note_handler(
     Ok(StatusCode::OK)
 }
 
+/// Delete an existing note
+pub async fn undelete_note_handler(
+    token: String,
+    user_id: i32,
+    db: PgPool,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    info!("Undeleting note for user {}", user_id);
+
+    undelete_note(user_id, &token, &db).await?;
+
+    Ok(StatusCode::OK)
+}
+
 /// Update an existing note
 pub async fn update_note_handler(
     token: String,
@@ -172,6 +185,28 @@ async fn delete_note(
         SET deleted_at = $1
         WHERE user_id = $2 AND token = $3 AND deleted_at IS NULL",
         deleted_at,
+        user_id,
+        token,
+    )
+    .execute(db)
+    .await?;
+
+    if result.rows_affected() == 1 {
+        Ok(())
+    } else if result.rows_affected() == 0 {
+        Err(ApiError::Unauthorized)
+    } else {
+        Err(ApiError::ViolatedAssertion(
+            "Multiple rows affected when updating note".to_string(),
+        ))
+    }
+}
+
+async fn undelete_note(user_id: i32, token: &str, db: &PgPool) -> Result<(), ApiError> {
+    let result = query!(
+        "UPDATE notes
+        SET deleted_at = NULL
+        WHERE user_id = $1 AND token = $2 AND deleted_at IS NOT NULL",
         user_id,
         token,
     )
