@@ -17,13 +17,12 @@ pub struct SaveRequest {
 #[derive(Serialize)]
 pub struct SaveNoteResponse {
     id: String,
-    created_at: i64,
     modified_at: i64,
     _links: NoteEndpoints,
 }
 
 /// Save a note to db.
-pub async fn save_note(
+pub async fn save_note_handler(
     user_id: i32,
     note: SaveRequest,
     db: PgPool,
@@ -43,7 +42,32 @@ pub async fn save_note(
 
     Ok(warp::reply::json(&SaveNoteResponse {
         id: token.clone(),
-        created_at: now,
+        modified_at: now,
+        _links: get_note_endpoints(&token),
+    }))
+}
+
+/// Save a note to db.
+pub async fn update_note_handler(
+    token: String,
+    user_id: i32,
+    note: SaveRequest,
+    db: PgPool,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    info!("Updating note for user {}", user_id);
+
+    let now = get_current_time();
+
+    let SaveRequest {
+        title,
+        tags,
+        content,
+    } = note;
+
+    update_note(user_id, &token, now, &title, &tags, &content, &db).await?;
+
+    Ok(warp::reply::json(&SaveNoteResponse {
+        id: token.clone(),
         modified_at: now,
         _links: get_note_endpoints(&token),
     }))
@@ -74,4 +98,38 @@ async fn store_note(
     .await?;
 
     Ok(())
+}
+
+async fn update_note(
+    user_id: i32,
+    token: &str,
+    modified_at: i64,
+    title: &str,
+    tags: &str,
+    content: &str,
+    db: &PgPool,
+) -> Result<(), ApiError> {
+    let result = query!(
+        "UPDATE notes
+        SET modified_at = $1, title = $2, tags = $3, content = $4
+        WHERE user_id = $5 AND token = $6",
+        modified_at,
+        title,
+        tags,
+        content,
+        user_id,
+        token,
+    )
+    .execute(db)
+    .await?;
+
+    if result.rows_affected() == 1 {
+        Ok(())
+    } else if result.rows_affected() == 0 {
+        Err(ApiError::Unauthorized)
+    } else {
+        Err(ApiError::ViolatedAssertion(
+            "Multiple rows affected when updating note".to_string(),
+        ))
+    }
 }

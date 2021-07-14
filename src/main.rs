@@ -9,7 +9,6 @@ use log::info;
 use sqlx::postgres::PgPoolOptions;
 use warp::Filter;
 
-use std::collections::HashMap;
 use std::net::SocketAddr;
 
 use dotenv::dotenv;
@@ -65,7 +64,6 @@ async fn main() {
     //    .and(warp::path("notes"))
     //    .and(warp::path::end())
     //    .and(is_authorized.clone())
-    //    .and(warp::query::<HashMap<String, String>>())
     //    .and(with_db.clone())
     //    .and_then(note::list_notes);
 
@@ -73,10 +71,19 @@ async fn main() {
         .and(warp::path("notes"))
         .and(warp::path::end())
         .and(is_authorized.clone())
-        .and(with_user)
+        .and(with_user.clone())
         .and(warp::body::json())
         .and(with_db.clone())
-        .and_then(note::save_note);
+        .and_then(note::save_note_handler);
+
+    let update_note = warp::put()
+        .and(warp::path!("notes" / String))
+        .and(warp::path::end())
+        .and(is_authorized.clone())
+        .and(with_user.clone())
+        .and(warp::body::json())
+        .and(with_db.clone())
+        .and_then(note::update_note_handler);
 
     let cors = warp::cors()
         .allow_origin(
@@ -98,6 +105,7 @@ async fn main() {
             .or(login)
             .or(logout)
             .or(save_note)
+            .or(update_note)
             .with(cors)
             .recover(handle_rejection),
     )
