@@ -1,7 +1,8 @@
+use crate::endpoint::{get_note_endpoints, NoteEndpoints};
 use crate::error::ApiError;
 use crate::util::{get_current_time, get_note_token};
-use log::{info, warn};
-use serde::Deserialize;
+use log::info;
+use serde::{Deserialize, Serialize};
 use sqlx::{query, PgPool};
 
 /// Request to save note.
@@ -12,6 +13,15 @@ pub struct SaveRequest {
     content: String,
 }
 
+/// Response to save / update note.
+#[derive(Serialize)]
+pub struct SaveNoteResponse {
+    id: String,
+    created_at: i64,
+    modified_at: i64,
+    _links: NoteEndpoints,
+}
+
 /// Save a note to db.
 pub async fn save_note(
     user_id: i32,
@@ -19,6 +29,7 @@ pub async fn save_note(
     db: PgPool,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     info!("Saving note for user {}", user_id);
+
     let now = get_current_time();
     let token = get_note_token();
 
@@ -28,15 +39,19 @@ pub async fn save_note(
         content,
     } = note;
 
-    store_note(user_id, token, now, now, &title, &tags, &content, &db).await?;
+    store_note(user_id, &token, now, now, &title, &tags, &content, &db).await?;
 
-    // TODO decide on return value
-    Ok(warp::reply::json(&"".to_string()))
+    Ok(warp::reply::json(&SaveNoteResponse {
+        id: token.clone(),
+        created_at: now,
+        modified_at: now,
+        _links: get_note_endpoints(&token),
+    }))
 }
 
 async fn store_note(
     user_id: i32,
-    token: String,
+    token: &str,
     created_at: i64,
     modified_at: i64,
     title: &str,

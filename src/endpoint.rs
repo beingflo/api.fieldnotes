@@ -43,57 +43,26 @@ impl Endpoint {
 
 /// Endpoints returned on call to `list notes` endpoint.
 #[derive(Serialize, Clone, Debug)]
-pub struct NotesEndpoints {
+pub struct NoteEndpoints {
     get: Endpoint,
-    delete: Endpoint,
-}
-
-/// Endpoints returned on call to `get note` endpoint.
-#[derive(Serialize, Clone, Debug)]
-pub struct GetNoteEndpoints {
     update: Endpoint,
     delete: Endpoint,
-}
-
-/// Endpoints returned on call to `delete note` endpoint.
-#[derive(Serialize, Clone, Debug)]
-pub struct DeleteNoteEndpoints {
     undelete: Endpoint,
 }
 
 // List notes endpoints.
-pub fn list_notes_endpoints(id: &str) -> NotesEndpoints {
+pub fn get_note_endpoints(id: &str) -> NoteEndpoints {
     let base_url = dotenv::var("BASE_URL").unwrap();
 
     let get_note_url = format!("{}/{}/{}", base_url, "notes", id);
-    let delete_note_url = format!("{}/{}/{}", base_url, "notes", id);
-
-    NotesEndpoints {
-        get: Endpoint::get(get_note_url),
-        delete: Endpoint::delete(delete_note_url),
-    }
-}
-
-// Get note endpoints.
-pub fn get_note_endpoints(id: &str) -> GetNoteEndpoints {
-    let base_url = dotenv::var("BASE_URL").unwrap();
-
     let update_note_url = format!("{}/{}/{}", base_url, "notes", id);
     let delete_note_url = format!("{}/{}/{}", base_url, "notes", id);
-
-    GetNoteEndpoints {
-        update: Endpoint::put(update_note_url),
-        delete: Endpoint::delete(delete_note_url),
-    }
-}
-
-// Delete note endpoints.
-pub fn delete_note_endpoints(id: &str) -> DeleteNoteEndpoints {
-    let base_url = dotenv::var("BASE_URL").unwrap();
-
     let undelete_note_url = format!("{}/{}/{}", base_url, "notes/undelete", id);
 
-    DeleteNoteEndpoints {
+    NoteEndpoints {
+        get: Endpoint::get(get_note_url),
+        update: Endpoint::put(update_note_url),
+        delete: Endpoint::delete(delete_note_url),
         undelete: Endpoint::put(undelete_note_url),
     }
 }
