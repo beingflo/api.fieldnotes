@@ -23,9 +23,28 @@ pub struct SaveNoteResponse {
     _links: NoteEndpoints,
 }
 
-/// DB note response
+/// DB list note response
 #[derive(Serialize)]
-pub struct DBNoteResponse {
+pub struct DBListNoteResponse {
+    id: String,
+    modified_at: i64,
+    title: String,
+    tags: String,
+}
+
+/// Response to list notes request
+#[derive(Serialize)]
+pub struct ListNoteResponse {
+    id: String,
+    modified_at: i64,
+    title: String,
+    tags: String,
+    _links: NoteEndpoints,
+}
+
+/// DB get note response
+#[derive(Serialize)]
+pub struct DBGetNoteResponse {
     id: String,
     modified_at: i64,
     title: String,
@@ -33,9 +52,9 @@ pub struct DBNoteResponse {
     content: String,
 }
 
-/// Response to list notes request
+/// Response to get note request
 #[derive(Serialize)]
-pub struct ListNoteResponse {
+pub struct GetNoteResponse {
     id: String,
     modified_at: i64,
     title: String,
@@ -70,6 +89,26 @@ pub async fn save_note_handler(
     }))
 }
 
+/// Get an existing note
+pub async fn get_note_handler(
+    token: String,
+    user_id: i32,
+    db: PgPool,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    info!("Get note for user {}", user_id);
+
+    let note = get_note(user_id, &token, &db).await?;
+
+    Ok(warp::reply::json(&GetNoteResponse {
+        id: note.id,
+        modified_at: note.modified_at,
+        title: note.title,
+        tags: note.tags,
+        content: note.content,
+        _links: get_note_endpoints(&token),
+    }))
+}
+
 /// Delete an existing note
 pub async fn delete_note_handler(
     token: String,
@@ -85,7 +124,7 @@ pub async fn delete_note_handler(
     Ok(StatusCode::OK)
 }
 
-/// Delete an existing note
+/// Undelete an existing note
 pub async fn undelete_note_handler(
     token: String,
     user_id: i32,
@@ -139,12 +178,35 @@ pub async fn list_notes_handler(
             modified_at: note.modified_at,
             title: note.title,
             tags: note.tags,
-            content: note.content,
             _links: get_note_endpoints(&note.id),
         })
         .collect();
 
     Ok(warp::reply::json(&notes_with_links))
+}
+
+async fn get_note(user_id: i32, token: &str, db: &PgPool) -> Result<DBGetNoteResponse, ApiError> {
+    match query!(
+        "SELECT token, modified_at, title, tags, content
+        FROM notes
+        WHERE user_id = $1 AND token = $2 AND deleted_at IS NULL",
+        user_id,
+        token,
+    )
+    .fetch_optional(db)
+    .await?
+    {
+        Some(row) => Ok(DBGetNoteResponse {
+            id: token.to_string(),
+            modified_at: row.modified_at,
+            title: row.title,
+            tags: row.tags,
+            content: row.content,
+        }),
+        None => {
+            return Err(ApiError::Unauthorized);
+        }
+    }
 }
 
 async fn store_note(
@@ -258,24 +320,23 @@ async fn update_note(
     }
 }
 
-async fn list_notes(user_id: i32, db: &PgPool) -> Result<Vec<DBNoteResponse>, ApiError> {
+async fn list_notes(user_id: i32, db: &PgPool) -> Result<Vec<DBListNoteResponse>, ApiError> {
     let mut rows = query!(
-        "SELECT token, modified_at, title, tags, content
+        "SELECT token, modified_at, title, tags
         FROM notes
         WHERE user_id = $1 AND deleted_at IS NULL",
         user_id
     )
     .fetch(db);
 
-    let mut notes: Vec<DBNoteResponse> = Vec::new();
+    let mut notes: Vec<DBListNoteResponse> = Vec::new();
 
     while let Some(note) = rows.try_next().await? {
-        notes.push(DBNoteResponse {
+        notes.push(DBListNoteResponse {
             id: note.token,
             modified_at: note.modified_at,
             title: note.title,
             tags: note.tags,
-            content: note.content,
         });
     }
 
