@@ -103,7 +103,7 @@ pub async fn delete_user(
 pub async fn login(user: UserCredentials, db: PgPool) -> Result<impl warp::Reply, warp::Rejection> {
     info!("Login user {}", user.name);
 
-    if !user_exists(&user.name, &db)
+    if !user_exists_and_is_active(&user.name, &db)
         .await
         .map_err(|e| reject::custom(e))?
     {
@@ -213,6 +213,29 @@ async fn user_exists(name: &str, db: &PgPool) -> Result<bool, ApiError> {
     }
 }
 
+async fn user_exists_and_is_active(name: &str, db: &PgPool) -> Result<bool, ApiError> {
+    let result = query!(
+        "SELECT COUNT(id)
+        FROM users 
+        WHERE username = $1 AND deleted_at IS NULL;",
+        name
+    )
+    .fetch_one(db)
+    .await;
+
+    match result {
+        Ok(row) => {
+            if let Some(0) = row.count {
+                Ok(false)
+            } else {
+                info!("User already exists");
+                Ok(true)
+            }
+        }
+        Err(error) => Err(ApiError::DBError(error)),
+    }
+}
+
 async fn user_exists_and_matches_id(
     name: &str,
     user_id: i32,
@@ -221,7 +244,7 @@ async fn user_exists_and_matches_id(
     match query!(
         "SELECT id
         FROM users 
-        WHERE username = $1;",
+        WHERE username = $1 AND deleted_at IS NULL;",
         name
     )
     .fetch_optional(db)
@@ -347,10 +370,13 @@ pub async fn delete_all_user_data(user_id: i32, db: &PgPool) -> Result<(), ApiEr
     .execute(&mut tx)
     .await?;
 
+    let now = get_current_time();
+
     query!(
-        "DELETE
-        FROM users 
-        WHERE id = $1;",
+        "UPDATE users
+        SET deleted_at = $1
+        WHERE id = $2;",
+        now,
         user_id
     )
     .execute(&mut tx)

@@ -5,5 +5,6 @@ CREATE TABLE users
   username varchar(25) UNIQUE NOT NULL,
   password varchar(100) NOT NULL,
   created_at BIGINT NOT NULL,
+  deleted_at BIGINT,
   balance BIGINT NOT NULL
 );
