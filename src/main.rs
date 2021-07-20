@@ -62,6 +62,14 @@ async fn main() {
         .and(with_db.clone())
         .and_then(user::logout);
 
+    let delete_user = warp::delete()
+        .and(warp::path("user"))
+        .and(warp::body::json())
+        .and(is_authorized.clone())
+        .and(with_user.clone())
+        .and(with_db.clone())
+        .and_then(user::delete_user);
+
     let login = warp::post()
         .and(warp::path("session"))
         .and(warp::body::json())
@@ -137,6 +145,7 @@ async fn main() {
         signup
             .or(login)
             .or(logout)
+            .or(delete_user)
             .or(change_password)
             .or(list_notes)
             .or(get_note)
