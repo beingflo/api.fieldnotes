@@ -66,10 +66,10 @@ async fn get_auth_token_info(token: &str, db: &PgPool) -> Result<(i32, i64), war
 
 /// Add a new token to the user. User is expected to exist.
 pub async fn store_auth_token(
-    db: &PgPool,
     name: &str,
     token: &str,
     created_at: i64,
+    db: &PgPool,
 ) -> Result<(), ApiError> {
     query!(
         "INSERT INTO auth_tokens (token, created_at, user_id)
