@@ -6,7 +6,6 @@ use log::{error, info, warn};
 use serde::Deserialize;
 use sqlx::{query, PgPool};
 use warp::http::StatusCode;
-use warp::reject;
 use warp::Reply;
 
 /// Cost of bcrypt hashing algorithm
@@ -38,10 +37,7 @@ pub async fn signup(
 ) -> Result<impl warp::Reply, warp::Rejection> {
     info!("Creating user {}", user.name);
 
-    if user_exists(&user.name, &db)
-        .await
-        .map_err(|e| reject::custom(e))?
-    {
+    if user_exists(&user.name, &db).await? {
         warn!("User {} already exists", user.name);
         return Ok(StatusCode::CONFLICT);
     }
@@ -56,9 +52,7 @@ pub async fn signup(
 
     let now = get_current_time();
 
-    store_user(&user.name, &hashed_password, now as i64, &db)
-        .await
-        .map_err(|e| reject::custom(e))?;
+    store_user(&user.name, &hashed_password, now as i64, &db).await?;
 
     Ok(StatusCode::OK)
 }
@@ -71,10 +65,7 @@ pub async fn delete_user(
 ) -> Result<impl warp::Reply, warp::Rejection> {
     info!("Deleting user {}", credentials.name);
 
-    if !user_exists_and_matches_id(&credentials.name, user_id, &db)
-        .await
-        .map_err(|e| reject::custom(e))?
-    {
+    if !user_exists_and_matches_id(&credentials.name, user_id, &db).await? {
         warn!(
             "User {} doesn't exists or doesn't match auth token",
             user_id
@@ -82,14 +73,9 @@ pub async fn delete_user(
         return Ok(StatusCode::UNAUTHORIZED);
     }
 
-    let password = get_password(&credentials.name, &db)
-        .await
-        .map_err(|e| reject::custom(e))?;
+    let password = get_password(&credentials.name, &db).await?;
 
-    match verify_password(&credentials.name, &credentials.password, &password)
-        .await
-        .map_err(|e| reject::custom(e))?
-    {
+    match verify_password(&credentials.name, &credentials.password, &password).await? {
         false => return Ok(StatusCode::UNAUTHORIZED),
         true => (),
     }
@@ -103,22 +89,14 @@ pub async fn delete_user(
 pub async fn login(user: UserCredentials, db: PgPool) -> Result<impl warp::Reply, warp::Rejection> {
     info!("Login user {}", user.name);
 
-    if !user_exists_and_is_active(&user.name, &db)
-        .await
-        .map_err(|e| reject::custom(e))?
-    {
+    if !user_exists_and_is_active(&user.name, &db).await? {
         warn!("User {} doesn't exists", user.name);
         return Ok(StatusCode::UNAUTHORIZED.into_response());
     }
 
-    let password = get_password(&user.name, &db)
-        .await
-        .map_err(|e| reject::custom(e))?;
+    let password = get_password(&user.name, &db).await?;
 
-    match verify_password(&user.name, &user.password, &password)
-        .await
-        .map_err(|e| reject::custom(e))?
-    {
+    match verify_password(&user.name, &user.password, &password).await? {
         false => return Ok(StatusCode::UNAUTHORIZED.into_response()),
         true => (),
     }
@@ -127,9 +105,7 @@ pub async fn login(user: UserCredentials, db: PgPool) -> Result<impl warp::Reply
 
     let token = get_auth_token();
 
-    store_auth_token(&user.name, &token, now, &db)
-        .await
-        .map_err(|e| reject::custom(e))?;
+    store_auth_token(&user.name, &token, now, &db).await?;
 
     Ok(get_cookie_headers(&token, TOKEN_EXPIRATION))
 }
@@ -142,10 +118,7 @@ pub async fn change_password(
 ) -> Result<impl warp::Reply, warp::Rejection> {
     info!("Change password for user {}", user_id);
 
-    if !user_exists_and_matches_id(&credentials.name, user_id, &db)
-        .await
-        .map_err(|e| reject::custom(e))?
-    {
+    if !user_exists_and_matches_id(&credentials.name, user_id, &db).await? {
         warn!(
             "User {} doesn't exists or doesn't match auth token",
             user_id
@@ -153,14 +126,9 @@ pub async fn change_password(
         return Ok(StatusCode::UNAUTHORIZED);
     }
 
-    let password = get_password(&credentials.name, &db)
-        .await
-        .map_err(|e| reject::custom(e))?;
+    let password = get_password(&credentials.name, &db).await?;
 
-    match verify_password(&credentials.name, &credentials.password, &password)
-        .await
-        .map_err(|e| reject::custom(e))?
-    {
+    match verify_password(&credentials.name, &credentials.password, &password).await? {
         false => return Ok(StatusCode::UNAUTHORIZED),
         true => (),
     }
@@ -173,9 +141,7 @@ pub async fn change_password(
 
     let hashed_password = hashed_password.unwrap();
 
-    update_password(user_id, &hashed_password, &db)
-        .await
-        .map_err(|e| reject::custom(e))?;
+    update_password(user_id, &hashed_password, &db).await?;
 
     Ok(StatusCode::OK)
 }
@@ -248,8 +214,7 @@ async fn user_exists_and_matches_id(
         name
     )
     .fetch_optional(db)
-    .await
-    .map_err(|e| ApiError::DBError(e))?
+    .await?
     {
         Some(row) => {
             if row.id == user_id {
