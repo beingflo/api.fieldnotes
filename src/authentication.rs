@@ -1,19 +1,19 @@
 use crate::error::ApiError;
-use crate::util::get_current_time;
+use chrono::{DateTime, Duration, Utc};
 use log::{info, warn};
 use sqlx::{query, PgPool};
 use warp::reject;
 
-/// Time in seconds for a session token to expire: 2 Months.
-pub const TOKEN_EXPIRATION: i64 = 60 * 60 * 24 * 60;
+/// Token expiration time: 2 months
+pub const TOKEN_EXPIRATION_WEEKS: i64 = 8;
 
 /// Checks if user has proper authorization for request.
 pub async fn is_authorized(token: String, db: PgPool) -> Result<(), warp::Rejection> {
     let (user_id, created_at) = get_auth_token_info(&token, &db).await?;
 
-    let now = get_current_time();
+    let now = Utc::now();
 
-    if created_at + TOKEN_EXPIRATION > now {
+    if created_at + Duration::weeks(TOKEN_EXPIRATION_WEEKS) > now {
         info!("Token valid for user {}", user_id);
         Ok(())
     } else {
@@ -45,7 +45,10 @@ pub async fn get_user_id(token: String, db: PgPool) -> Result<i32, warp::Rejecti
 }
 
 // Get user_id and creation date of provided token
-async fn get_auth_token_info(token: &str, db: &PgPool) -> Result<(i32, i64), warp::Rejection> {
+async fn get_auth_token_info(
+    token: &str,
+    db: &PgPool,
+) -> Result<(i32, DateTime<Utc>), warp::Rejection> {
     match query!(
         "SELECT user_id, created_at
         FROM auth_tokens 
@@ -68,7 +71,7 @@ async fn get_auth_token_info(token: &str, db: &PgPool) -> Result<(i32, i64), war
 pub async fn store_auth_token(
     name: &str,
     token: &str,
-    created_at: i64,
+    created_at: DateTime<Utc>,
     db: &PgPool,
 ) -> Result<(), ApiError> {
     query!(

@@ -1,6 +1,7 @@
 use crate::endpoint::{get_note_endpoints, NoteEndpoints};
 use crate::error::ApiError;
-use crate::util::{get_current_time, get_note_token};
+use crate::util::get_note_token;
+use chrono::{DateTime, Utc};
 use log::info;
 use serde::{Deserialize, Serialize};
 use sqlx::{query, PgPool};
@@ -19,7 +20,7 @@ pub struct SaveRequest {
 #[derive(Serialize)]
 pub struct SaveNoteResponse {
     id: String,
-    modified_at: i64,
+    modified_at: DateTime<Utc>,
     _links: NoteEndpoints,
 }
 
@@ -27,7 +28,7 @@ pub struct SaveNoteResponse {
 #[derive(Serialize)]
 pub struct DBListNoteResponse {
     id: String,
-    modified_at: i64,
+    modified_at: DateTime<Utc>,
     title: String,
     tags: String,
 }
@@ -36,7 +37,7 @@ pub struct DBListNoteResponse {
 #[derive(Serialize)]
 pub struct ListNoteResponse {
     id: String,
-    modified_at: i64,
+    modified_at: DateTime<Utc>,
     title: String,
     tags: String,
     _links: NoteEndpoints,
@@ -46,7 +47,7 @@ pub struct ListNoteResponse {
 #[derive(Serialize)]
 pub struct DBGetNoteResponse {
     id: String,
-    modified_at: i64,
+    modified_at: DateTime<Utc>,
     title: String,
     tags: String,
     content: String,
@@ -56,7 +57,7 @@ pub struct DBGetNoteResponse {
 #[derive(Serialize)]
 pub struct GetNoteResponse {
     id: String,
-    modified_at: i64,
+    modified_at: DateTime<Utc>,
     title: String,
     tags: String,
     content: String,
@@ -71,7 +72,7 @@ pub async fn save_note_handler(
 ) -> Result<impl warp::Reply, warp::Rejection> {
     info!("Saving note for user {}", user_id);
 
-    let now = get_current_time();
+    let now = Utc::now();
     let token = get_note_token();
 
     let SaveRequest {
@@ -117,7 +118,7 @@ pub async fn delete_note_handler(
 ) -> Result<impl warp::Reply, warp::Rejection> {
     info!("Deleting note for user {}", user_id);
 
-    let now = get_current_time();
+    let now = Utc::now();
 
     delete_note(user_id, &token, now, &db).await?;
 
@@ -146,7 +147,7 @@ pub async fn update_note_handler(
 ) -> Result<impl warp::Reply, warp::Rejection> {
     info!("Updating note for user {}", user_id);
 
-    let now = get_current_time();
+    let now = Utc::now();
 
     let SaveRequest {
         title,
@@ -212,8 +213,8 @@ async fn get_note(user_id: i32, token: &str, db: &PgPool) -> Result<DBGetNoteRes
 async fn store_note(
     user_id: i32,
     token: &str,
-    created_at: i64,
-    modified_at: i64,
+    created_at: DateTime<Utc>,
+    modified_at: DateTime<Utc>,
     title: &str,
     tags: &str,
     content: &str,
@@ -239,7 +240,7 @@ async fn store_note(
 async fn delete_note(
     user_id: i32,
     token: &str,
-    deleted_at: i64,
+    deleted_at: DateTime<Utc>,
     db: &PgPool,
 ) -> Result<(), ApiError> {
     let result = query!(
@@ -289,7 +290,7 @@ async fn undelete_note(user_id: i32, token: &str, db: &PgPool) -> Result<(), Api
 async fn update_note(
     user_id: i32,
     token: &str,
-    modified_at: i64,
+    modified_at: DateTime<Utc>,
     title: &str,
     tags: &str,
     content: &str,

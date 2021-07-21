@@ -1,8 +1,9 @@
-use crate::authentication::{delete_auth_token, store_auth_token, TOKEN_EXPIRATION};
+use crate::authentication::{delete_auth_token, store_auth_token, TOKEN_EXPIRATION_WEEKS};
 use crate::balance::DEFAULT_BALANCE;
 use crate::error::ApiError;
-use crate::util::{get_auth_token, get_cookie_headers, get_current_time};
+use crate::util::{get_auth_token, get_cookie_headers};
 use bcrypt::{hash, verify};
+use chrono::{DateTime, Duration, Utc};
 use log::{error, info, warn};
 use serde::Deserialize;
 use sqlx::{query, PgPool};
@@ -47,9 +48,9 @@ pub async fn signup(
 
     let hashed_password = hashed_password.unwrap();
 
-    let now = get_current_time();
+    let now = Utc::now();
 
-    store_user(&user.name, &hashed_password, now as i64, &db).await?;
+    store_user(&user.name, &hashed_password, now, &db).await?;
 
     Ok(StatusCode::OK)
 }
@@ -98,13 +99,16 @@ pub async fn login(user: UserCredentials, db: PgPool) -> Result<impl warp::Reply
         true => (),
     }
 
-    let now = get_current_time();
+    let now = Utc::now();
 
     let token = get_auth_token();
 
     store_auth_token(&user.name, &token, now, &db).await?;
 
-    Ok(get_cookie_headers(&token, TOKEN_EXPIRATION))
+    Ok(get_cookie_headers(
+        &token,
+        Duration::weeks(TOKEN_EXPIRATION_WEEKS),
+    ))
 }
 
 /// Change password of existing user
@@ -150,7 +154,7 @@ pub async fn logout(token: String, db: PgPool) -> Result<impl warp::Reply, warp:
     delete_auth_token(&token, &db).await?;
 
     // Set cookies empty and max-age 0 to force expiration
-    Ok(get_cookie_headers("", 0))
+    Ok(get_cookie_headers("", Duration::zero()))
 }
 
 async fn user_exists(name: &str, db: &PgPool) -> Result<bool, ApiError> {
@@ -227,7 +231,7 @@ async fn user_exists_and_matches_id(
 async fn store_user(
     name: &str,
     password_hash: &str,
-    time: i64,
+    time: DateTime<Utc>,
     db: &PgPool,
 ) -> Result<(), ApiError> {
     let query_result = query!(
@@ -332,7 +336,7 @@ pub async fn delete_all_user_data(user_id: i32, db: &PgPool) -> Result<(), ApiEr
     .execute(&mut tx)
     .await?;
 
-    let now = get_current_time();
+    let now = Utc::now();
 
     query!(
         "UPDATE users
