@@ -1,10 +1,12 @@
 mod authentication;
+mod balance;
 mod endpoint;
 mod error;
 mod note;
 mod user;
 mod util;
 
+use balance::balance_decrease_schedule;
 use log::info;
 use sqlx::postgres::PgPoolOptions;
 use warp::Filter;
@@ -28,7 +30,8 @@ async fn main() {
         .await
         .expect("DB connection failed");
 
-    let with_db = warp::any().map(move || pool.clone());
+    let db_clone = pool.clone();
+    let with_db = warp::any().map(move || db_clone.clone());
 
     let with_token = warp::filters::cookie::cookie("token");
 
@@ -141,21 +144,23 @@ async fn main() {
         .parse()
         .expect("Listen address invalid");
 
-    warp::serve(
-        signup
-            .or(login)
-            .or(logout)
-            .or(delete_user)
-            .or(change_password)
-            .or(list_notes)
-            .or(get_note)
-            .or(save_note)
-            .or(update_note)
-            .or(delete_note)
-            .or(undelete_note)
-            .with(cors)
-            .recover(handle_rejection),
-    )
-    .run(listen)
-    .await;
+    tokio::join!(
+        warp::serve(
+            signup
+                .or(login)
+                .or(logout)
+                .or(delete_user)
+                .or(change_password)
+                .or(list_notes)
+                .or(get_note)
+                .or(save_note)
+                .or(update_note)
+                .or(delete_note)
+                .or(undelete_note)
+                .with(cors)
+                .recover(handle_rejection),
+        )
+        .run(listen),
+        balance_decrease_schedule(pool.clone())
+    );
 }

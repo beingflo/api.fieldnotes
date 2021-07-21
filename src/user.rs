@@ -1,4 +1,5 @@
 use crate::authentication::{delete_auth_token, store_auth_token, TOKEN_EXPIRATION};
+use crate::balance::DEFAULT_BALANCE;
 use crate::error::ApiError;
 use crate::util::{get_auth_token, get_cookie_headers, get_current_time};
 use bcrypt::{hash, verify};
@@ -10,10 +11,6 @@ use warp::Reply;
 
 /// Cost of bcrypt hashing algorithm
 const BCRYPT_COST: u32 = 12;
-
-/// Default starting balance for new users
-/// 0.5 CHF
-const DEFAULT_BALANCE: i64 = 5000;
 
 /// This request form is expected for signup and login calls.
 #[derive(Deserialize)]
