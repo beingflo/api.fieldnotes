@@ -1,4 +1,4 @@
-use chrono::{Duration, Local};
+use chrono::{Duration, Utc};
 use log::{error, info};
 use sqlx::{query, PgPool};
 use tokio::time::{interval_at, Instant};
@@ -36,7 +36,7 @@ pub async fn decrease_balances(db: &PgPool) {
 
 pub async fn balance_decrease_schedule(db: PgPool) {
     let midnight = {
-        let now = Local::now();
+        let now = Utc::now();
 
         let tomorrow_midnight = (now + Duration::days(1)).date().and_hms(0, 0, 0);
 
