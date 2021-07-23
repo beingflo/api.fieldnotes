@@ -1,5 +1,7 @@
+use chrono::{Duration, Local};
 use log::{error, info};
 use sqlx::{query, PgPool};
+use tokio::time::{interval_at, Instant};
 
 /// Balance is stored as CHF * 10^6 to avoid significant rounding errors
 
@@ -33,7 +35,21 @@ pub async fn decrease_balances(db: &PgPool) {
 }
 
 pub async fn balance_decrease_schedule(db: PgPool) {
-    let mut interval_timer = tokio::time::interval(chrono::Duration::days(1).to_std().unwrap());
+    let midnight = {
+        let now = Local::now();
+
+        let tomorrow_midnight = (now + Duration::days(1)).date().and_hms(0, 0, 0);
+
+        tomorrow_midnight
+            .signed_duration_since(now)
+            .to_std()
+            .unwrap()
+    };
+
+    let mut interval_timer = interval_at(
+        Instant::now() + midnight,
+        Duration::days(1).to_std().unwrap(),
+    );
     loop {
         interval_timer.tick().await;
 
