@@ -5,30 +5,6 @@ use tokio::time::{interval_at, Instant};
 
 const DAILY_BALANCE_DECREASE: i64 = 16_438;
 
-// Discount balances of all user accounts by the appropriate amount.
-// Should run once a day.
-pub async fn decrease_balances(db: &PgPool) {
-    match query!(
-        "UPDATE users 
-        SET balance = balance - $1
-        WHERE deleted_at IS NULL;",
-        DAILY_BALANCE_DECREASE,
-    )
-    .execute(db)
-    .await
-    {
-        Ok(result) => {
-            info!(
-                "Balance decrease executed with {} affected rows",
-                result.rows_affected()
-            )
-        }
-        Err(error) => {
-            error!("Balance decrease error: {}", error)
-        }
-    };
-}
-
 pub async fn balance_decrease_schedule(db: PgPool) {
     let midnight = {
         let now = Utc::now();
@@ -54,4 +30,67 @@ pub async fn balance_decrease_schedule(db: PgPool) {
             decrease_balances(&db_clone).await;
         });
     }
+}
+
+// Discount balances of all user accounts by the appropriate amount.
+// Should run once a day.
+async fn decrease_balances(db: &PgPool) {
+    match query!(
+        "UPDATE users 
+        SET balance = balance - $1
+        WHERE deleted_at IS NULL;",
+        DAILY_BALANCE_DECREASE,
+    )
+    .execute(db)
+    .await
+    {
+        Ok(result) => {
+            info!(
+                "Balance decrease executed with {} affected rows",
+                result.rows_affected()
+            )
+        }
+        Err(error) => {
+            error!("Balance decrease caused error: {}", error)
+        }
+    };
+}
+
+pub async fn notes_deletion_schedule(db: PgPool) {
+    let mut interval_timer = interval_at(
+        Instant::now() + Duration::minutes(5).to_std().unwrap(),
+        Duration::hours(7).to_std().unwrap(),
+    );
+    loop {
+        interval_timer.tick().await;
+
+        let db_clone = db.clone();
+
+        tokio::spawn(async move {
+            delete_expired_notes(&db_clone).await;
+        });
+    }
+}
+
+async fn delete_expired_notes(db: &PgPool) {
+    let one_month_ago = Utc::now() - Duration::weeks(4);
+    match query!(
+        "DELETE
+        FROM notes 
+        WHERE deleted_at IS NOT NULL AND deleted_at < $1;",
+        one_month_ago,
+    )
+    .execute(db)
+    .await
+    {
+        Ok(result) => {
+            info!(
+                "Deletion of expired notes with {} affected rows",
+                result.rows_affected()
+            )
+        }
+        Err(error) => {
+            error!("Deletion of expired notes caused error: {}", error)
+        }
+    };
 }

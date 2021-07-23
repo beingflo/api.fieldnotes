@@ -7,7 +7,7 @@ mod user;
 mod util;
 
 use log::info;
-use schedule::balance_decrease_schedule;
+use schedule::{balance_decrease_schedule, notes_deletion_schedule};
 use sqlx::postgres::PgPoolOptions;
 use warp::Filter;
 
@@ -161,6 +161,7 @@ async fn main() {
                 .recover(handle_rejection),
         )
         .run(listen),
-        balance_decrease_schedule(pool.clone())
+        balance_decrease_schedule(pool.clone()),
+        notes_deletion_schedule(pool.clone())
     );
 }
