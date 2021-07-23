@@ -1,13 +1,13 @@
 mod authentication;
-mod balance;
 mod endpoint;
 mod error;
 mod note;
+mod schedule;
 mod user;
 mod util;
 
-use balance::balance_decrease_schedule;
 use log::info;
+use schedule::balance_decrease_schedule;
 use sqlx::postgres::PgPoolOptions;
 use warp::Filter;
 

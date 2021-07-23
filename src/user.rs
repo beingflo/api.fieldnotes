@@ -1,5 +1,4 @@
 use crate::authentication::{delete_auth_token, store_auth_token, TOKEN_EXPIRATION_WEEKS};
-use crate::balance::DEFAULT_BALANCE;
 use crate::error::ApiError;
 use crate::util::{get_auth_token, get_cookie_headers};
 use bcrypt::{hash, verify};
@@ -9,6 +8,12 @@ use serde::Deserialize;
 use sqlx::{query, PgPool};
 use warp::http::StatusCode;
 use warp::Reply;
+
+/// Balance is stored as CHF * 10^6 to avoid significant rounding errors
+
+/// Default starting balance for new users
+/// 0.5 CHF = 500'000
+pub const DEFAULT_BALANCE: i64 = 500_000;
 
 /// Cost of bcrypt hashing algorithm
 const BCRYPT_COST: u32 = 12;
