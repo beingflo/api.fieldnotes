@@ -1,3 +1,4 @@
+use crate::authentication::TOKEN_EXPIRATION_WEEKS;
 use chrono::{Duration, Utc};
 use log::{error, info};
 use sqlx::{query, PgPool};
@@ -91,6 +92,45 @@ async fn delete_expired_notes(db: &PgPool) {
         }
         Err(error) => {
             error!("Deletion of expired notes caused error: {}", error)
+        }
+    };
+}
+
+pub async fn tokens_deletion_schedule(db: PgPool) {
+    let mut interval_timer = interval_at(
+        Instant::now() + Duration::minutes(3).to_std().unwrap(),
+        Duration::hours(3).to_std().unwrap(),
+    );
+    loop {
+        interval_timer.tick().await;
+
+        let db_clone = db.clone();
+
+        tokio::spawn(async move {
+            delete_expired_tokens(&db_clone).await;
+        });
+    }
+}
+
+async fn delete_expired_tokens(db: &PgPool) {
+    let token_expiration_period = Utc::now() - Duration::weeks(TOKEN_EXPIRATION_WEEKS);
+    match query!(
+        "DELETE
+        FROM auth_tokens
+        WHERE created_at < $1;",
+        token_expiration_period,
+    )
+    .execute(db)
+    .await
+    {
+        Ok(result) => {
+            info!(
+                "Deletion of expired auth tokens with {} affected rows",
+                result.rows_affected()
+            )
+        }
+        Err(error) => {
+            error!("Deletion of expired auth tokens caused error: {}", error)
         }
     };
 }
