@@ -5,6 +5,7 @@ use chrono::{DateTime, Utc};
 use log::info;
 use serde::{Deserialize, Serialize};
 use sqlx::{query, PgPool};
+use std::collections::HashMap;
 use tokio_stream::StreamExt;
 use warp::http::StatusCode;
 
@@ -38,6 +39,27 @@ pub struct DBListNoteResponse {
 pub struct ListNoteResponse {
     id: String,
     modified_at: DateTime<Utc>,
+    title: String,
+    tags: String,
+    _links: NoteEndpoints,
+}
+
+/// DB list deleted note response
+#[derive(Serialize)]
+pub struct DBListDeletedNoteResponse {
+    id: String,
+    modified_at: DateTime<Utc>,
+    deleted_at: DateTime<Utc>,
+    title: String,
+    tags: String,
+}
+
+/// Response to list notes request
+#[derive(Serialize)]
+pub struct ListDeletedNoteResponse {
+    id: String,
+    modified_at: DateTime<Utc>,
+    deleted_at: DateTime<Utc>,
     title: String,
     tags: String,
     _links: NoteEndpoints,
@@ -164,26 +186,46 @@ pub async fn update_note_handler(
     }))
 }
 
-/// List all notes
+/// List all non-deleted notes
 pub async fn list_notes_handler(
+    queries: HashMap<String, String>,
     user_id: i32,
     db: PgPool,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    info!("Listing notes for user {}", user_id);
+    if let Some(_) = queries.get("deleted") {
+        info!("Listing deleted notes for user {}", user_id);
 
-    let notes = list_notes(user_id, &db).await?;
-    let notes_with_links: Vec<ListNoteResponse> = notes
-        .into_iter()
-        .map(|note| ListNoteResponse {
-            id: note.id.clone(),
-            modified_at: note.modified_at,
-            title: note.title,
-            tags: note.tags,
-            _links: get_note_endpoints(&note.id),
-        })
-        .collect();
+        let notes = list_deleted_notes(user_id, &db).await?;
+        let notes_with_links: Vec<ListDeletedNoteResponse> = notes
+            .into_iter()
+            .map(|note| ListDeletedNoteResponse {
+                id: note.id.clone(),
+                modified_at: note.modified_at,
+                deleted_at: note.deleted_at,
+                title: note.title,
+                tags: note.tags,
+                _links: get_note_endpoints(&note.id),
+            })
+            .collect();
 
-    Ok(warp::reply::json(&notes_with_links))
+        Ok(warp::reply::json(&notes_with_links))
+    } else {
+        info!("Listing notes for user {}", user_id);
+
+        let notes = list_notes(user_id, &db).await?;
+        let notes_with_links: Vec<ListNoteResponse> = notes
+            .into_iter()
+            .map(|note| ListNoteResponse {
+                id: note.id.clone(),
+                modified_at: note.modified_at,
+                title: note.title,
+                tags: note.tags,
+                _links: get_note_endpoints(&note.id),
+            })
+            .collect();
+
+        Ok(warp::reply::json(&notes_with_links))
+    }
 }
 
 async fn get_note(user_id: i32, token: &str, db: &PgPool) -> Result<DBGetNoteResponse, ApiError> {
@@ -336,6 +378,33 @@ async fn list_notes(user_id: i32, db: &PgPool) -> Result<Vec<DBListNoteResponse>
         notes.push(DBListNoteResponse {
             id: note.token,
             modified_at: note.modified_at,
+            title: note.title,
+            tags: note.tags,
+        });
+    }
+
+    Ok(notes)
+}
+
+async fn list_deleted_notes(
+    user_id: i32,
+    db: &PgPool,
+) -> Result<Vec<DBListDeletedNoteResponse>, ApiError> {
+    let mut rows = query!(
+        "SELECT token, modified_at, deleted_at, title, tags
+        FROM notes
+        WHERE user_id = $1 AND deleted_at IS NOT NULL",
+        user_id
+    )
+    .fetch(db);
+
+    let mut notes: Vec<DBListDeletedNoteResponse> = Vec::new();
+
+    while let Some(note) = rows.try_next().await? {
+        notes.push(DBListDeletedNoteResponse {
+            id: note.token,
+            modified_at: note.modified_at,
+            deleted_at: note.deleted_at.unwrap(),
             title: note.title,
             tags: note.tags,
         });

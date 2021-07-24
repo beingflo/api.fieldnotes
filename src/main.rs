@@ -88,6 +88,7 @@ async fn main() {
     let list_notes = warp::get()
         .and(warp::path("notes"))
         .and(warp::path::end())
+        .and(warp::query::query())
         .and(is_authorized.clone())
         .and(with_user.clone())
         .and(with_db.clone())
