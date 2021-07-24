@@ -6,10 +6,10 @@ use warp::hyper::header::SET_COOKIE;
 use warp::hyper::Body;
 
 /// Number of alphanumeric chars in auth tokens
-const AUTH_TOKEN_LENGTH: usize = 64;
+const AUTH_TOKEN_LENGTH: usize = 128;
 
 /// Number of alphanumeric chars in note tokens
-const NOTE_TOKEN_LENGTH: usize = 16;
+const NOTE_TOKEN_LENGTH: usize = 32;
 
 /// Get a secure token for session tokens or share links.
 pub fn get_auth_token() -> String {
@@ -20,7 +20,7 @@ pub fn get_auth_token() -> String {
         .collect::<String>()
 }
 
-/// Get a secure token for session tokens or share links.
+/// Get a secure token for note ids
 pub fn get_note_token() -> String {
     rand::rngs::OsRng
         .sample_iter(&Alphanumeric)

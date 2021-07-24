@@ -2,7 +2,7 @@
 CREATE TABLE users
 ( 
   id SERIAL PRIMARY KEY,
-  username varchar(25) UNIQUE NOT NULL,
+  username varchar(50) UNIQUE NOT NULL,
   password varchar(100) NOT NULL,
   created_at TIMESTAMPTZ NOT NULL,
   deleted_at TIMESTAMPTZ,
