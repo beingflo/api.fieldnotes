@@ -13,6 +13,9 @@ pub enum ApiError {
 
     #[error("Unauthorized")]
     Unauthorized,
+
+    #[error("Underfunded")]
+    Underfunded,
 }
 
 impl warp::reject::Reject for ApiError {}
@@ -32,6 +35,10 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
             ApiError::Unauthorized => {
                 error!("Unauthorized access");
                 return Ok(StatusCode::UNAUTHORIZED);
+            }
+            ApiError::Underfunded => {
+                error!("Underfunded account trying write");
+                return Ok(StatusCode::PAYMENT_REQUIRED);
             }
         }
     }

@@ -15,6 +15,10 @@ use warp::Reply;
 /// 0.5 CHF = 500'000
 pub const DEFAULT_BALANCE: i64 = 500_000;
 
+/// Once balance falls below this threshold,
+/// account becomes read only
+pub const FUNDED_BALANCE: i64 = -500_000;
+
 /// Cost of bcrypt hashing algorithm
 const BCRYPT_COST: u32 = 12;
 
@@ -160,6 +164,31 @@ pub async fn logout(token: String, db: PgPool) -> Result<impl warp::Reply, warp:
 
     // Set cookies empty and max-age 0 to force expiration
     Ok(get_cookie_headers("", Duration::zero()))
+}
+
+pub async fn is_funded(user_id: i32, db: PgPool) -> Result<(), warp::Rejection> {
+    let balance = get_user_balance(user_id, &db).await?;
+
+    if balance > FUNDED_BALANCE {
+        Ok(())
+    } else {
+        Err(warp::reject::custom(ApiError::Underfunded))
+    }
+}
+
+async fn get_user_balance(user_id: i32, db: &PgPool) -> Result<i64, ApiError> {
+    match query!(
+        "SELECT balance
+        FROM users 
+        WHERE id = $1;",
+        user_id,
+    )
+    .fetch_one(db)
+    .await
+    {
+        Ok(row) => Ok(row.balance),
+        Err(error) => Err(ApiError::DBError(error)),
+    }
 }
 
 async fn user_exists(name: &str, db: &PgPool) -> Result<bool, ApiError> {

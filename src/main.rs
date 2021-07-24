@@ -44,6 +44,12 @@ async fn main() {
         .and_then(authentication::is_authorized)
         .untuple_one();
 
+    let is_funded = with_user
+        .clone()
+        .and(with_db.clone())
+        .and_then(user::is_funded)
+        .untuple_one();
+
     let signup = warp::post()
         .and(warp::path("user"))
         .and(warp::body::json())
@@ -99,6 +105,7 @@ async fn main() {
         .and(warp::path("notes"))
         .and(warp::path::end())
         .and(is_authorized.clone())
+        .and(is_funded.clone())
         .and(with_user.clone())
         .and(warp::body::json())
         .and(with_db.clone())
@@ -108,6 +115,7 @@ async fn main() {
         .and(warp::path!("notes" / String))
         .and(warp::path::end())
         .and(is_authorized.clone())
+        .and(is_funded.clone())
         .and(with_user.clone())
         .and(warp::body::json())
         .and(with_db.clone())
