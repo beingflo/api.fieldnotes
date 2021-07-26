@@ -12,8 +12,8 @@ use warp::http::StatusCode;
 /// Request to save note
 #[derive(Deserialize)]
 pub struct SaveRequest {
-    title: String,
-    tags: String,
+    metainfo: String,
+    encrypted_key: String,
     content: String,
 }
 
@@ -30,8 +30,8 @@ pub struct SaveNoteResponse {
 pub struct DBListNoteResponse {
     id: String,
     modified_at: DateTime<Utc>,
-    title: String,
-    tags: String,
+    metainfo: String,
+    encrypted_key: String,
 }
 
 /// Response to list notes request
@@ -39,8 +39,8 @@ pub struct DBListNoteResponse {
 pub struct ListNoteResponse {
     id: String,
     modified_at: DateTime<Utc>,
-    title: String,
-    tags: String,
+    metainfo: String,
+    encrypted_key: String,
     _links: NoteEndpoints,
 }
 
@@ -50,8 +50,8 @@ pub struct DBListDeletedNoteResponse {
     id: String,
     modified_at: DateTime<Utc>,
     deleted_at: DateTime<Utc>,
-    title: String,
-    tags: String,
+    metainfo: String,
+    encrypted_key: String,
 }
 
 /// Response to list notes request
@@ -60,8 +60,8 @@ pub struct ListDeletedNoteResponse {
     id: String,
     modified_at: DateTime<Utc>,
     deleted_at: DateTime<Utc>,
-    title: String,
-    tags: String,
+    metainfo: String,
+    encrypted_key: String,
     _links: NoteEndpoints,
 }
 
@@ -70,8 +70,8 @@ pub struct ListDeletedNoteResponse {
 pub struct DBGetNoteResponse {
     id: String,
     modified_at: DateTime<Utc>,
-    title: String,
-    tags: String,
+    metainfo: String,
+    encrypted_key: String,
     content: String,
 }
 
@@ -80,8 +80,8 @@ pub struct DBGetNoteResponse {
 pub struct GetNoteResponse {
     id: String,
     modified_at: DateTime<Utc>,
-    title: String,
-    tags: String,
+    metainfo: String,
+    encrypted_key: String,
     content: String,
     _links: NoteEndpoints,
 }
@@ -98,12 +98,22 @@ pub async fn save_note_handler(
     let token = get_note_token();
 
     let SaveRequest {
-        title,
-        tags,
+        metainfo,
+        encrypted_key,
         content,
     } = note;
 
-    store_note(user_id, &token, now, now, &title, &tags, &content, &db).await?;
+    store_note(
+        user_id,
+        &token,
+        now,
+        now,
+        &metainfo,
+        &encrypted_key,
+        &content,
+        &db,
+    )
+    .await?;
 
     Ok(warp::reply::json(&SaveNoteResponse {
         id: token.clone(),
@@ -125,8 +135,8 @@ pub async fn get_note_handler(
     Ok(warp::reply::json(&GetNoteResponse {
         id: note.id,
         modified_at: note.modified_at,
-        title: note.title,
-        tags: note.tags,
+        metainfo: note.metainfo,
+        encrypted_key: note.encrypted_key,
         content: note.content,
         _links: get_note_endpoints(&token),
     }))
@@ -172,12 +182,21 @@ pub async fn update_note_handler(
     let now = Utc::now();
 
     let SaveRequest {
-        title,
-        tags,
+        metainfo,
+        encrypted_key,
         content,
     } = note;
 
-    update_note(user_id, &token, now, &title, &tags, &content, &db).await?;
+    update_note(
+        user_id,
+        &token,
+        now,
+        &metainfo,
+        &encrypted_key,
+        &content,
+        &db,
+    )
+    .await?;
 
     Ok(warp::reply::json(&SaveNoteResponse {
         id: token.clone(),
@@ -202,8 +221,8 @@ pub async fn list_notes_handler(
                 id: note.id.clone(),
                 modified_at: note.modified_at,
                 deleted_at: note.deleted_at,
-                title: note.title,
-                tags: note.tags,
+                metainfo: note.metainfo,
+                encrypted_key: note.encrypted_key,
                 _links: get_note_endpoints(&note.id),
             })
             .collect();
@@ -218,8 +237,8 @@ pub async fn list_notes_handler(
             .map(|note| ListNoteResponse {
                 id: note.id.clone(),
                 modified_at: note.modified_at,
-                title: note.title,
-                tags: note.tags,
+                metainfo: note.metainfo,
+                encrypted_key: note.encrypted_key,
                 _links: get_note_endpoints(&note.id),
             })
             .collect();
@@ -230,7 +249,7 @@ pub async fn list_notes_handler(
 
 async fn get_note(user_id: i32, token: &str, db: &PgPool) -> Result<DBGetNoteResponse, ApiError> {
     match query!(
-        "SELECT token, modified_at, title, tags, content
+        "SELECT token, modified_at, metainfo, encrypted_key, content
         FROM notes
         WHERE user_id = $1 AND token = $2 AND deleted_at IS NULL",
         user_id,
@@ -242,8 +261,8 @@ async fn get_note(user_id: i32, token: &str, db: &PgPool) -> Result<DBGetNoteRes
         Some(row) => Ok(DBGetNoteResponse {
             id: token.to_string(),
             modified_at: row.modified_at,
-            title: row.title,
-            tags: row.tags,
+            metainfo: row.metainfo,
+            encrypted_key: row.encrypted_key,
             content: row.content,
         }),
         None => {
@@ -257,20 +276,20 @@ async fn store_note(
     token: &str,
     created_at: DateTime<Utc>,
     modified_at: DateTime<Utc>,
-    title: &str,
-    tags: &str,
+    metainfo: &str,
+    encrypted_key: &str,
     content: &str,
     db: &PgPool,
 ) -> Result<(), ApiError> {
     query!(
-        "INSERT INTO notes (token, user_id, created_at, modified_at, title, tags, content)
+        "INSERT INTO notes (token, user_id, created_at, modified_at, metainfo, encrypted_key, content)
         VALUES ($1, $2, $3, $4, $5, $6, $7);",
         token,
         user_id,
         created_at,
         modified_at,
-        title,
-        tags,
+        metainfo,
+        encrypted_key,
         content,
     )
     .execute(db)
@@ -333,18 +352,18 @@ async fn update_note(
     user_id: i32,
     token: &str,
     modified_at: DateTime<Utc>,
-    title: &str,
-    tags: &str,
+    metainfo: &str,
+    encrypted_key: &str,
     content: &str,
     db: &PgPool,
 ) -> Result<(), ApiError> {
     let result = query!(
         "UPDATE notes
-        SET modified_at = $1, title = $2, tags = $3, content = $4
+        SET modified_at = $1, metainfo = $2, encrypted_key = $3, content = $4
         WHERE user_id = $5 AND token = $6 AND deleted_at IS NULL",
         modified_at,
-        title,
-        tags,
+        metainfo,
+        encrypted_key,
         content,
         user_id,
         token,
@@ -365,7 +384,7 @@ async fn update_note(
 
 async fn list_notes(user_id: i32, db: &PgPool) -> Result<Vec<DBListNoteResponse>, ApiError> {
     let mut rows = query!(
-        "SELECT token, modified_at, title, tags
+        "SELECT token, modified_at, metainfo, encrypted_key 
         FROM notes
         WHERE user_id = $1 AND deleted_at IS NULL",
         user_id
@@ -378,8 +397,8 @@ async fn list_notes(user_id: i32, db: &PgPool) -> Result<Vec<DBListNoteResponse>
         notes.push(DBListNoteResponse {
             id: note.token,
             modified_at: note.modified_at,
-            title: note.title,
-            tags: note.tags,
+            metainfo: note.metainfo,
+            encrypted_key: note.encrypted_key,
         });
     }
 
@@ -391,7 +410,7 @@ async fn list_deleted_notes(
     db: &PgPool,
 ) -> Result<Vec<DBListDeletedNoteResponse>, ApiError> {
     let mut rows = query!(
-        "SELECT token, modified_at, deleted_at, title, tags
+        "SELECT token, modified_at, deleted_at, metainfo, encrypted_key 
         FROM notes
         WHERE user_id = $1 AND deleted_at IS NOT NULL",
         user_id
@@ -405,8 +424,8 @@ async fn list_deleted_notes(
             id: note.token,
             modified_at: note.modified_at,
             deleted_at: note.deleted_at.unwrap(),
-            title: note.title,
-            tags: note.tags,
+            metainfo: note.metainfo,
+            encrypted_key: note.encrypted_key,
         });
     }
 
