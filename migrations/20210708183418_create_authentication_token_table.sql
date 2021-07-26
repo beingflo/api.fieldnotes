@@ -1,4 +1,3 @@
--- Add migration script here
 CREATE TABLE auth_tokens 
 ( 
   id SERIAL PRIMARY KEY,

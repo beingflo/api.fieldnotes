@@ -1,4 +1,3 @@
--- Add migration script here
 CREATE TABLE notes 
 ( 
   id SERIAL PRIMARY KEY,
@@ -7,7 +6,7 @@ CREATE TABLE notes
   created_at TIMESTAMPTZ NOT NULL,
   modified_at TIMESTAMPTZ NOT NULL,
   deleted_at TIMESTAMPTZ,
-  title varchar(100) NOT NULL,
-  tags varchar NOT NULL,
-  content varchar NOT NULL
+  encrypted_key varchar(200) NOT NULL,
+  metainfo varchar(1000) NOT NULL,
+  content text NOT NULL
 );
