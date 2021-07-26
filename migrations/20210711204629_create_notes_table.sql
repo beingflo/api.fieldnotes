@@ -2,7 +2,7 @@ CREATE TABLE notes
 ( 
   id SERIAL PRIMARY KEY,
   token varchar(32) NOT NULL,
-  user_id integer REFERENCES users(id) NOT NULL,
+  user_id integer NOT NULL REFERENCES users(id),
   created_at TIMESTAMPTZ NOT NULL,
   modified_at TIMESTAMPTZ NOT NULL,
   deleted_at TIMESTAMPTZ,
