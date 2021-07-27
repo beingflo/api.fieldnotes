@@ -22,6 +22,7 @@ pub struct CreateShareResponse {
 #[derive(Serialize)]
 pub struct ListShareResponse {
     token: String,
+    note_token: String,
     created_at: DateTime<Utc>,
 }
 
@@ -83,9 +84,10 @@ pub async fn list_shares_handler(
 
 async fn list_shares(user_id: i32, db: &PgPool) -> Result<Vec<ListShareResponse>, ApiError> {
     let mut rows = query!(
-        "SELECT token, created_at
+        "SELECT shares.token, notes.token AS note_token, shares.created_at
         FROM shares 
-        WHERE user_id = $1;",
+        INNER JOIN notes ON shares.note_id = notes.id
+        WHERE shares.user_id = $1;",
         user_id
     )
     .fetch(db);
@@ -95,6 +97,7 @@ async fn list_shares(user_id: i32, db: &PgPool) -> Result<Vec<ListShareResponse>
     while let Some(note) = rows.try_next().await? {
         shares.push(ListShareResponse {
             token: note.token,
+            note_token: note.note_token,
             created_at: note.created_at,
         });
     }
