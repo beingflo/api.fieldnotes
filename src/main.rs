@@ -3,6 +3,7 @@ mod endpoint;
 mod error;
 mod note;
 mod schedule;
+mod share;
 mod user;
 mod util;
 
@@ -146,6 +147,16 @@ async fn main() {
         .and(with_db.clone())
         .and_then(note::undelete_note_handler);
 
+    let create_share = warp::post()
+        .and(warp::path("share"))
+        .and(warp::path::end())
+        .and(is_authorized.clone())
+        .and(is_funded.clone())
+        .and(with_user.clone())
+        .and(warp::body::json())
+        .and(with_db.clone())
+        .and_then(share::create_share_handler);
+
     let cors = warp::cors()
         .allow_origin(
             dotenv::var("ALLOW_ORIGIN")
@@ -175,6 +186,7 @@ async fn main() {
                 .or(update_note)
                 .or(delete_note)
                 .or(undelete_note)
+                .or(create_share)
                 .with(cors)
                 .recover(handle_rejection),
         )

@@ -8,14 +8,26 @@ use warp::hyper::Body;
 /// Number of alphanumeric chars in auth tokens
 const AUTH_TOKEN_LENGTH: usize = 128;
 
+/// Number of alphanumeric chars in share tokens
+const SHARE_TOKEN_LENGTH: usize = 64;
+
 /// Number of alphanumeric chars in note tokens
 const NOTE_TOKEN_LENGTH: usize = 32;
 
-/// Get a secure token for session tokens or share links.
+/// Get a secure token for session tokens
 pub fn get_auth_token() -> String {
     rand::rngs::OsRng
         .sample_iter(&Alphanumeric)
         .take(AUTH_TOKEN_LENGTH)
+        .map(char::from)
+        .collect::<String>()
+}
+
+/// Get a secure token for share tokens
+pub fn get_share_token() -> String {
+    rand::rngs::OsRng
+        .sample_iter(&Alphanumeric)
+        .take(SHARE_TOKEN_LENGTH)
         .map(char::from)
         .collect::<String>()
 }
