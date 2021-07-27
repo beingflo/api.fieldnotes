@@ -39,7 +39,7 @@ pub async fn get_user_id(token: String, db: PgPool) -> Result<i32, warp::Rejecti
         Some(tok) => Ok(tok.user_id),
         None => {
             warn!("Invalid token {}", token);
-            return Err(warp::reject::custom(ApiError::Unauthorized));
+            Err(warp::reject::custom(ApiError::Unauthorized))
         }
     }
 }
@@ -62,7 +62,7 @@ async fn get_auth_token_info(
         Some(tok) => Ok((tok.user_id, tok.created_at)),
         None => {
             warn!("Invalid token {}", token);
-            return Err(warp::reject::custom(ApiError::Unauthorized));
+            Err(warp::reject::custom(ApiError::Unauthorized))
         }
     }
 }

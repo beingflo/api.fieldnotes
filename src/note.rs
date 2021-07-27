@@ -211,7 +211,7 @@ pub async fn list_notes_handler(
     user_id: i32,
     db: PgPool,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    if let Some(_) = queries.get("deleted") {
+    if queries.get("deleted").is_some() {
         info!("Listing deleted notes for user {}", user_id);
 
         let notes = list_deleted_notes(user_id, &db).await?;
@@ -265,9 +265,7 @@ async fn get_note(user_id: i32, token: &str, db: &PgPool) -> Result<DBGetNoteRes
             encrypted_key: row.encrypted_key,
             content: row.content,
         }),
-        None => {
-            return Err(ApiError::Unauthorized);
-        }
+        None => Err(ApiError::Unauthorized),
     }
 }
 
