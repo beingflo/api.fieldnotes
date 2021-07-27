@@ -4,7 +4,7 @@ use crate::util::{get_auth_token, get_cookie_headers};
 use bcrypt::{hash, verify};
 use chrono::{DateTime, Duration, Utc};
 use log::{error, info, warn};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use sqlx::{query, PgPool};
 use warp::http::StatusCode;
 use warp::Reply;
@@ -35,6 +35,12 @@ pub struct PasswordChangeRequest {
     name: String,
     password: String,
     password_new: String,
+}
+
+/// Response to save / update note
+#[derive(Serialize)]
+pub struct UserInfoResponse {
+    balance: f64,
 }
 
 /// Sign up new user. This stores the user data in the db.
@@ -154,6 +160,20 @@ pub async fn change_password(
     update_password(user_id, &hashed_password, &db).await?;
 
     Ok(StatusCode::OK)
+}
+
+/// Get user info
+pub async fn user_info_handler(
+    user_id: i32,
+    db: PgPool,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    info!("Get info info of user {}", user_id);
+
+    let balance = get_user_balance(user_id, &db).await?;
+
+    Ok(warp::reply::json(&UserInfoResponse {
+        balance: balance as f64 / 1_000_000.0,
+    }))
 }
 
 /// Log out user. This deletes auth_token and overrides existing http-only cookies.

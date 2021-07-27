@@ -85,6 +85,14 @@ async fn main() {
         .and(with_db.clone())
         .and_then(user::login);
 
+    let user_info = warp::get()
+        .and(warp::path!("user" / "info"))
+        .and(warp::path::end())
+        .and(is_authorized.clone())
+        .and(with_user.clone())
+        .and(with_db.clone())
+        .and_then(user::user_info_handler);
+
     let list_notes = warp::get()
         .and(warp::path("notes"))
         .and(warp::path::end())
@@ -159,6 +167,7 @@ async fn main() {
                 .or(login)
                 .or(logout)
                 .or(delete_user)
+                .or(user_info)
                 .or(change_password)
                 .or(list_notes)
                 .or(get_note)
