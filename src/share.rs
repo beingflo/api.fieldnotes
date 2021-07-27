@@ -4,6 +4,7 @@ use chrono::{DateTime, Utc};
 use log::info;
 use serde::{Deserialize, Serialize};
 use sqlx::{query, PgPool};
+use tokio_stream::StreamExt;
 
 /// Request to create share
 #[derive(Deserialize)]
@@ -15,6 +16,13 @@ pub struct CreateShareRequest {
 #[derive(Serialize)]
 pub struct CreateShareResponse {
     token: String,
+}
+
+/// List shares response
+#[derive(Serialize)]
+pub struct ListShareResponse {
+    token: String,
+    created_at: DateTime<Utc>,
 }
 
 /// Create a new share from an existing note
@@ -41,13 +49,13 @@ async fn create_share(
     db: &PgPool,
 ) -> Result<(), ApiError> {
     let row = query!(
-        "INSERT INTO shares (token, note_id, created_at)
-        SELECT $1, id, $3
-        FROM notes WHERE token = $2 AND user_id = $4 AND deleted_at IS NULL;",
+        "INSERT INTO shares (token, note_id, user_id, created_at)
+        SELECT $1, id, $3, $4
+        FROM notes WHERE token = $2 AND user_id = $3 AND deleted_at IS NULL;",
         token,
         note,
-        created_at,
-        user_id
+        user_id,
+        created_at
     )
     .execute(db)
     .await?;
@@ -59,4 +67,37 @@ async fn create_share(
             "Creating share affected multiple rows".to_string(),
         )),
     }
+}
+
+/// List existing shares
+pub async fn list_shares_handler(
+    user_id: i32,
+    db: PgPool,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    info!("Listing shares for user {}", user_id);
+
+    let shares = list_shares(user_id, &db).await?;
+
+    Ok(warp::reply::json(&shares))
+}
+
+async fn list_shares(user_id: i32, db: &PgPool) -> Result<Vec<ListShareResponse>, ApiError> {
+    let mut rows = query!(
+        "SELECT token, created_at
+        FROM shares 
+        WHERE user_id = $1;",
+        user_id
+    )
+    .fetch(db);
+
+    let mut shares: Vec<ListShareResponse> = Vec::new();
+
+    while let Some(note) = rows.try_next().await? {
+        shares.push(ListShareResponse {
+            token: note.token,
+            created_at: note.created_at,
+        });
+    }
+
+    Ok(shares)
 }
