@@ -313,6 +313,21 @@ async fn delete_note(
     .execute(db)
     .await?;
 
+    // Delete shares of this note
+    query!(
+        "DELETE 
+        FROM shares 
+        WHERE note_id = (
+            SELECT id
+            FROM notes
+            WHERE token = $1 AND user_id = $2
+        ) AND user_id = $2;",
+        token,
+        user_id
+    )
+    .execute(db)
+    .await?;
+
     if result.rows_affected() == 1 {
         Ok(())
     } else if result.rows_affected() == 0 {
