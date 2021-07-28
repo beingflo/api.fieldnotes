@@ -5,6 +5,7 @@ use log::info;
 use serde::{Deserialize, Serialize};
 use sqlx::{query, PgPool};
 use tokio_stream::StreamExt;
+use warp::http::StatusCode;
 
 /// Request to create share
 #[derive(Deserialize)]
@@ -103,4 +104,36 @@ async fn list_shares(user_id: i32, db: &PgPool) -> Result<Vec<ListShareResponse>
     }
 
     Ok(shares)
+}
+
+pub async fn delete_share_handler(
+    token: String,
+    user_id: i32,
+    db: PgPool,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    info!("Deleting share for user {}", user_id);
+
+    delete_share(user_id, &token, &db).await?;
+
+    Ok(StatusCode::OK)
+}
+
+async fn delete_share(user_id: i32, token: &str, db: &PgPool) -> Result<(), ApiError> {
+    let row = query!(
+        "DELETE
+        FROM shares
+        WHERE token = $1 AND user_id = $2;",
+        token,
+        user_id,
+    )
+    .execute(db)
+    .await?;
+
+    match row.rows_affected() {
+        0 => Err(ApiError::Unauthorized),
+        1 => Ok(()),
+        _ => Err(ApiError::ViolatedAssertion(
+            "Deleting share affected multiple rows".to_string(),
+        )),
+    }
 }

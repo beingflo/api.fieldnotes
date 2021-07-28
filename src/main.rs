@@ -166,6 +166,14 @@ async fn main() {
         .and(with_db.clone())
         .and_then(share::list_shares_handler);
 
+    let delete_share = warp::delete()
+        .and(warp::path!("share" / String))
+        .and(warp::path::end())
+        .and(is_authorized.clone())
+        .and(with_user.clone())
+        .and(with_db.clone())
+        .and_then(share::delete_share_handler);
+
     let cors = warp::cors()
         .allow_origin(
             dotenv::var("ALLOW_ORIGIN")
@@ -196,6 +204,7 @@ async fn main() {
                 .or(delete_note)
                 .or(undelete_note)
                 .or(create_share)
+                .or(delete_share)
                 .or(list_shares)
                 .with(cors)
                 .recover(handle_rejection),
