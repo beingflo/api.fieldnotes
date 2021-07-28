@@ -1,7 +1,7 @@
 use crate::error::ApiError;
 use crate::util::get_share_token;
 use chrono::{DateTime, Utc};
-use log::info;
+use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use sqlx::{query, PgPool};
 use tokio_stream::StreamExt;
@@ -25,6 +25,13 @@ pub struct ListShareResponse {
     token: String,
     note_token: String,
     created_at: DateTime<Utc>,
+}
+
+/// Request to create share
+#[derive(Serialize)]
+pub struct AccessShareResponse {
+    metainfo: String,
+    content: String,
 }
 
 /// Create a new share from an existing note
@@ -135,5 +142,41 @@ async fn delete_share(user_id: i32, token: &str, db: &PgPool) -> Result<(), ApiE
         _ => Err(ApiError::ViolatedAssertion(
             "Deleting share affected multiple rows".to_string(),
         )),
+    }
+}
+
+pub async fn access_share_handler(
+    token: String,
+    db: PgPool,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    info!("Accessing share");
+
+    let note = access_share(&token, &db).await?;
+
+    Ok(warp::reply::json(&note))
+}
+
+async fn access_share(token: &str, db: &PgPool) -> Result<AccessShareResponse, ApiError> {
+    match query!(
+        "SELECT notes.metainfo, notes.content
+        FROM notes 
+        WHERE notes.id = (
+            SELECT shares.note_id
+            FROM shares
+            WHERE shares.token = $1
+        );",
+        token
+    )
+    .fetch_optional(db)
+    .await?
+    {
+        Some(row) => Ok(AccessShareResponse {
+            metainfo: row.metainfo,
+            content: row.content,
+        }),
+        None => {
+            warn!("Invalid share token {}", token);
+            Err(ApiError::Unauthorized)
+        }
     }
 }
