@@ -1,22 +1,21 @@
 mod authentication;
 mod endpoint;
 mod error;
+#[macro_use]
+mod helper;
 mod note;
 mod schedule;
 mod share;
 mod user;
 mod util;
 
+use dotenv::dotenv;
+use error::handle_rejection;
 use log::info;
 use schedule::{balance_decrease_schedule, notes_deletion_schedule, tokens_deletion_schedule};
 use sqlx::postgres::PgPoolOptions;
-use warp::Filter;
-
 use std::net::SocketAddr;
-
-use dotenv::dotenv;
-
-use error::handle_rejection;
+use warp::Filter;
 
 #[tokio::main]
 async fn main() {
@@ -198,24 +197,26 @@ async fn main() {
 
     tokio::join!(
         warp::serve(
-            signup
-                .or(login)
-                .or(logout)
-                .or(delete_user)
-                .or(user_info)
-                .or(change_password)
-                .or(list_notes)
-                .or(get_note)
-                .or(save_note)
-                .or(update_note)
-                .or(delete_note)
-                .or(undelete_note)
-                .or(create_share)
-                .or(delete_share)
-                .or(access_share)
-                .or(list_shares)
-                .with(cors)
-                .recover(handle_rejection),
+            combine!(
+                signup,
+                login,
+                logout,
+                delete_user,
+                user_info,
+                change_password,
+                list_notes,
+                get_note,
+                save_note,
+                update_note,
+                delete_note,
+                undelete_note,
+                create_share,
+                delete_share,
+                access_share,
+                list_shares
+            )
+            .with(cors)
+            .recover(handle_rejection),
         )
         .run(listen),
         balance_decrease_schedule(pool.clone()),
