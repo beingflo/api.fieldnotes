@@ -17,6 +17,7 @@ pub struct CreateShareRequest {
 #[derive(Serialize)]
 pub struct CreateShareResponse {
     token: String,
+    note_token: String,
 }
 
 /// List shares response
@@ -47,7 +48,10 @@ pub async fn create_share_handler(
 
     create_share(&token, &request.note, user_id, now, &db).await?;
 
-    Ok(warp::reply::json(&CreateShareResponse { token: token }))
+    Ok(warp::reply::json(&CreateShareResponse {
+        token: token,
+        note_token: request.note,
+    }))
 }
 
 async fn create_share(
