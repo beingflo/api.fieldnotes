@@ -5,5 +5,3 @@ CREATE TABLE auth_tokens
   token varchar(128) NOT NULL UNIQUE,
   created_at TIMESTAMPTZ NOT NULL
 );
-
-CREATE UNIQUE INDEX auth_token_index ON auth_tokens (token);

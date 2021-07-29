@@ -10,5 +10,3 @@ CREATE TABLE notes
   metainfo varchar(1000) NOT NULL,
   content text NOT NULL
 );
-
-CREATE UNIQUE INDEX notes_token_index ON notes (token);

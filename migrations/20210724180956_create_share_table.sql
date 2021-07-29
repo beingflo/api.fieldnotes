@@ -6,5 +6,3 @@ CREATE TABLE shares
   user_id integer NOT NULL REFERENCES users(id),
   created_at TIMESTAMPTZ NOT NULL
 );
-
-CREATE UNIQUE INDEX shares_token_index ON shares (token);
