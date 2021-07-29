@@ -354,7 +354,7 @@ pub async fn get_password(name: &str, db: &PgPool) -> Result<String, ApiError> {
 
 /// Verify supplied password for user.
 async fn verify_password(name: &str, password: &str, hash: &str) -> Result<bool, ApiError> {
-    match verify(password, &hash) {
+    match verify(password, hash) {
         Err(err) => {
             error!("Error while verifying password: {:?}", err);
             Err(ApiError::ViolatedAssertion(

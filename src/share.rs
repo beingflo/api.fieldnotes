@@ -49,7 +49,7 @@ pub async fn create_share_handler(
     create_share(&token, &request.note, user_id, now, &db).await?;
 
     Ok(warp::reply::json(&CreateShareResponse {
-        token: token,
+        token,
         note_token: request.note,
     }))
 }
