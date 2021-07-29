@@ -38,10 +38,9 @@ async fn main() {
         .and(with_db.clone())
         .and_then(authentication::get_user_id);
 
-    let is_authorized = with_token
+    let is_authorized_with_user = with_token
         .and(with_db.clone())
-        .and_then(authentication::is_authorized)
-        .untuple_one();
+        .and_then(authentication::is_authorized_with_user);
 
     let is_funded = with_user
         .clone()
@@ -58,14 +57,13 @@ async fn main() {
     let change_password = warp::put()
         .and(warp::path("user"))
         .and(warp::body::json())
-        .and(is_authorized.clone())
-        .and(with_user.clone())
+        .and(is_authorized_with_user.clone())
         .and(with_db.clone())
         .and_then(user::change_password);
 
     let logout = warp::delete()
         .and(warp::path("session"))
-        .and(is_authorized.clone())
+        .and(is_authorized_with_user.clone())
         .and(with_token)
         .and(with_db.clone())
         .and_then(user::logout);
@@ -73,8 +71,7 @@ async fn main() {
     let delete_user = warp::delete()
         .and(warp::path("user"))
         .and(warp::body::json())
-        .and(is_authorized.clone())
-        .and(with_user.clone())
+        .and(is_authorized_with_user.clone())
         .and(with_db.clone())
         .and_then(user::delete_user);
 
@@ -87,8 +84,7 @@ async fn main() {
     let user_info = warp::get()
         .and(warp::path!("user" / "info"))
         .and(warp::path::end())
-        .and(is_authorized.clone())
-        .and(with_user.clone())
+        .and(is_authorized_with_user.clone())
         .and(with_db.clone())
         .and_then(user::user_info_handler);
 
@@ -96,25 +92,22 @@ async fn main() {
         .and(warp::path("notes"))
         .and(warp::path::end())
         .and(warp::query::query())
-        .and(is_authorized.clone())
-        .and(with_user.clone())
+        .and(is_authorized_with_user.clone())
         .and(with_db.clone())
         .and_then(note::list_notes_handler);
 
     let get_note = warp::get()
         .and(warp::path!("notes" / String))
         .and(warp::path::end())
-        .and(is_authorized.clone())
-        .and(with_user.clone())
+        .and(is_authorized_with_user.clone())
         .and(with_db.clone())
         .and_then(note::get_note_handler);
 
     let save_note = warp::post()
         .and(warp::path("notes"))
         .and(warp::path::end())
-        .and(is_authorized.clone())
+        .and(is_authorized_with_user.clone())
         .and(is_funded.clone())
-        .and(with_user.clone())
         .and(warp::body::json())
         .and(with_db.clone())
         .and_then(note::save_note_handler);
@@ -122,9 +115,8 @@ async fn main() {
     let update_note = warp::put()
         .and(warp::path!("notes" / String))
         .and(warp::path::end())
-        .and(is_authorized.clone())
+        .and(is_authorized_with_user.clone())
         .and(is_funded.clone())
-        .and(with_user.clone())
         .and(warp::body::json())
         .and(with_db.clone())
         .and_then(note::update_note_handler);
@@ -132,25 +124,22 @@ async fn main() {
     let delete_note = warp::delete()
         .and(warp::path!("notes" / String))
         .and(warp::path::end())
-        .and(is_authorized.clone())
-        .and(with_user.clone())
+        .and(is_authorized_with_user.clone())
         .and(with_db.clone())
         .and_then(note::delete_note_handler);
 
     let undelete_note = warp::post()
         .and(warp::path!("notes" / "undelete" / String))
         .and(warp::path::end())
-        .and(is_authorized.clone())
-        .and(with_user.clone())
+        .and(is_authorized_with_user.clone())
         .and(with_db.clone())
         .and_then(note::undelete_note_handler);
 
     let create_share = warp::post()
         .and(warp::path("share"))
         .and(warp::path::end())
-        .and(is_authorized.clone())
+        .and(is_authorized_with_user.clone())
         .and(is_funded.clone())
-        .and(with_user.clone())
         .and(warp::body::json())
         .and(with_db.clone())
         .and_then(share::create_share_handler);
@@ -158,17 +147,15 @@ async fn main() {
     let list_shares = warp::get()
         .and(warp::path("share"))
         .and(warp::path::end())
-        .and(is_authorized.clone())
+        .and(is_authorized_with_user.clone())
         .and(is_funded.clone())
-        .and(with_user.clone())
         .and(with_db.clone())
         .and_then(share::list_shares_handler);
 
     let delete_share = warp::delete()
         .and(warp::path!("share" / String))
         .and(warp::path::end())
-        .and(is_authorized.clone())
-        .and(with_user.clone())
+        .and(is_authorized_with_user.clone())
         .and(with_db.clone())
         .and_then(share::delete_share_handler);
 

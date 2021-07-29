@@ -177,8 +177,12 @@ pub async fn user_info_handler(
 }
 
 /// Log out user. This deletes auth_token and overrides existing http-only cookies.
-pub async fn logout(token: String, db: PgPool) -> Result<impl warp::Reply, warp::Rejection> {
-    info!("Log out user");
+pub async fn logout(
+    user_id: i32,
+    token: String,
+    db: PgPool,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    info!("Log out user {}", user_id);
 
     delete_auth_token(&token, &db).await?;
 

@@ -7,15 +7,16 @@ use warp::reject;
 /// Token expiration time: 2 months
 pub const TOKEN_EXPIRATION_WEEKS: i64 = 8;
 
-/// Checks if user has proper authorization for request.
-pub async fn is_authorized(token: String, db: PgPool) -> Result<(), warp::Rejection> {
+/// Checks if user has proper authorization token for request and return user id
+/// used in further filters and handlers.
+pub async fn is_authorized_with_user(token: String, db: PgPool) -> Result<i32, warp::Rejection> {
     let (user_id, created_at) = get_auth_token_info(&token, &db).await?;
 
     let now = Utc::now();
 
     if created_at + Duration::weeks(TOKEN_EXPIRATION_WEEKS) > now {
         info!("Token valid for user {}", user_id);
-        Ok(())
+        Ok(user_id)
     } else {
         warn!("Token expired for user {}", user_id);
 
