@@ -1,4 +1,3 @@
-use crate::endpoint::{get_note_endpoints, NoteEndpoints};
 use crate::error::ApiError;
 use crate::util::get_note_token;
 use chrono::{DateTime, Utc};
@@ -22,16 +21,6 @@ pub struct SaveRequest {
 pub struct SaveNoteResponse {
     id: String,
     modified_at: DateTime<Utc>,
-    _links: NoteEndpoints,
-}
-
-/// DB list note response
-#[derive(Serialize)]
-pub struct DBListNoteResponse {
-    id: String,
-    modified_at: DateTime<Utc>,
-    metainfo: String,
-    encrypted_key: String,
 }
 
 /// Response to list notes request
@@ -39,17 +28,6 @@ pub struct DBListNoteResponse {
 pub struct ListNoteResponse {
     id: String,
     modified_at: DateTime<Utc>,
-    metainfo: String,
-    encrypted_key: String,
-    _links: NoteEndpoints,
-}
-
-/// DB list deleted note response
-#[derive(Serialize)]
-pub struct DBListDeletedNoteResponse {
-    id: String,
-    modified_at: DateTime<Utc>,
-    deleted_at: DateTime<Utc>,
     metainfo: String,
     encrypted_key: String,
 }
@@ -62,17 +40,6 @@ pub struct ListDeletedNoteResponse {
     deleted_at: DateTime<Utc>,
     metainfo: String,
     encrypted_key: String,
-    _links: NoteEndpoints,
-}
-
-/// DB get note response
-#[derive(Serialize)]
-pub struct DBGetNoteResponse {
-    id: String,
-    modified_at: DateTime<Utc>,
-    metainfo: String,
-    encrypted_key: String,
-    content: String,
 }
 
 /// Response to get note request
@@ -83,7 +50,6 @@ pub struct GetNoteResponse {
     metainfo: String,
     encrypted_key: String,
     content: String,
-    _links: NoteEndpoints,
 }
 
 /// Save a new note
@@ -118,7 +84,6 @@ pub async fn save_note_handler(
     Ok(warp::reply::json(&SaveNoteResponse {
         id: token.clone(),
         modified_at: now,
-        _links: get_note_endpoints(&token),
     }))
 }
 
@@ -130,16 +95,9 @@ pub async fn get_note_handler(
 ) -> Result<impl warp::Reply, warp::Rejection> {
     info!("Get note for user {}", user_id);
 
-    let note = get_note(user_id, &token, &db).await?;
+    let note: GetNoteResponse = get_note(user_id, &token, &db).await?;
 
-    Ok(warp::reply::json(&GetNoteResponse {
-        id: note.id,
-        modified_at: note.modified_at,
-        metainfo: note.metainfo,
-        encrypted_key: note.encrypted_key,
-        content: note.content,
-        _links: get_note_endpoints(&token),
-    }))
+    Ok(warp::reply::json(&note))
 }
 
 /// Delete an existing note
@@ -201,7 +159,6 @@ pub async fn update_note_handler(
     Ok(warp::reply::json(&SaveNoteResponse {
         id: token.clone(),
         modified_at: now,
-        _links: get_note_endpoints(&token),
     }))
 }
 
@@ -215,39 +172,18 @@ pub async fn list_notes_handler(
         info!("Listing deleted notes for user {}", user_id);
 
         let notes = list_deleted_notes(user_id, &db).await?;
-        let notes_with_links: Vec<ListDeletedNoteResponse> = notes
-            .into_iter()
-            .map(|note| ListDeletedNoteResponse {
-                id: note.id.clone(),
-                modified_at: note.modified_at,
-                deleted_at: note.deleted_at,
-                metainfo: note.metainfo,
-                encrypted_key: note.encrypted_key,
-                _links: get_note_endpoints(&note.id),
-            })
-            .collect();
 
-        Ok(warp::reply::json(&notes_with_links))
+        Ok(warp::reply::json(&notes))
     } else {
         info!("Listing notes for user {}", user_id);
 
         let notes = list_notes(user_id, &db).await?;
-        let notes_with_links: Vec<ListNoteResponse> = notes
-            .into_iter()
-            .map(|note| ListNoteResponse {
-                id: note.id.clone(),
-                modified_at: note.modified_at,
-                metainfo: note.metainfo,
-                encrypted_key: note.encrypted_key,
-                _links: get_note_endpoints(&note.id),
-            })
-            .collect();
 
-        Ok(warp::reply::json(&notes_with_links))
+        Ok(warp::reply::json(&notes))
     }
 }
 
-async fn get_note(user_id: i32, token: &str, db: &PgPool) -> Result<DBGetNoteResponse, ApiError> {
+async fn get_note(user_id: i32, token: &str, db: &PgPool) -> Result<GetNoteResponse, ApiError> {
     match query!(
         "SELECT token, modified_at, metainfo, encrypted_key, content
         FROM notes
@@ -258,7 +194,7 @@ async fn get_note(user_id: i32, token: &str, db: &PgPool) -> Result<DBGetNoteRes
     .fetch_optional(db)
     .await?
     {
-        Some(row) => Ok(DBGetNoteResponse {
+        Some(row) => Ok(GetNoteResponse {
             id: token.to_string(),
             modified_at: row.modified_at,
             metainfo: row.metainfo,
@@ -395,7 +331,7 @@ async fn update_note(
     }
 }
 
-async fn list_notes(user_id: i32, db: &PgPool) -> Result<Vec<DBListNoteResponse>, ApiError> {
+async fn list_notes(user_id: i32, db: &PgPool) -> Result<Vec<ListNoteResponse>, ApiError> {
     let mut rows = query!(
         "SELECT token, modified_at, metainfo, encrypted_key 
         FROM notes
@@ -404,10 +340,10 @@ async fn list_notes(user_id: i32, db: &PgPool) -> Result<Vec<DBListNoteResponse>
     )
     .fetch(db);
 
-    let mut notes: Vec<DBListNoteResponse> = Vec::new();
+    let mut notes: Vec<ListNoteResponse> = Vec::new();
 
     while let Some(note) = rows.try_next().await? {
-        notes.push(DBListNoteResponse {
+        notes.push(ListNoteResponse {
             id: note.token,
             modified_at: note.modified_at,
             metainfo: note.metainfo,
@@ -421,7 +357,7 @@ async fn list_notes(user_id: i32, db: &PgPool) -> Result<Vec<DBListNoteResponse>
 async fn list_deleted_notes(
     user_id: i32,
     db: &PgPool,
-) -> Result<Vec<DBListDeletedNoteResponse>, ApiError> {
+) -> Result<Vec<ListDeletedNoteResponse>, ApiError> {
     let mut rows = query!(
         "SELECT token, modified_at, deleted_at, metainfo, encrypted_key 
         FROM notes
@@ -430,10 +366,10 @@ async fn list_deleted_notes(
     )
     .fetch(db);
 
-    let mut notes: Vec<DBListDeletedNoteResponse> = Vec::new();
+    let mut notes: Vec<ListDeletedNoteResponse> = Vec::new();
 
     while let Some(note) = rows.try_next().await? {
-        notes.push(DBListDeletedNoteResponse {
+        notes.push(ListDeletedNoteResponse {
             id: note.token,
             modified_at: note.modified_at,
             deleted_at: note.deleted_at.unwrap(),

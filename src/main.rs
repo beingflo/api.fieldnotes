@@ -1,5 +1,4 @@
 mod authentication;
-mod endpoint;
 mod error;
 #[macro_use]
 mod helper;
