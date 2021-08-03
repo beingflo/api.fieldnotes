@@ -28,6 +28,7 @@ pub struct SaveNoteResponse {
 pub struct ListNoteResponse {
     id: String,
     modified_at: DateTime<Utc>,
+    created_at: DateTime<Utc>,
     metainfo: String,
     encrypted_key: String,
 }
@@ -37,6 +38,7 @@ pub struct ListNoteResponse {
 pub struct ListDeletedNoteResponse {
     id: String,
     modified_at: DateTime<Utc>,
+    created_at: DateTime<Utc>,
     deleted_at: DateTime<Utc>,
     metainfo: String,
     encrypted_key: String,
@@ -47,6 +49,7 @@ pub struct ListDeletedNoteResponse {
 pub struct GetNoteResponse {
     id: String,
     modified_at: DateTime<Utc>,
+    created_at: DateTime<Utc>,
     metainfo: String,
     encrypted_key: String,
     content: String,
@@ -185,7 +188,7 @@ pub async fn list_notes_handler(
 
 async fn get_note(user_id: i32, token: &str, db: &PgPool) -> Result<GetNoteResponse, ApiError> {
     match query!(
-        "SELECT token, modified_at, metainfo, encrypted_key, content
+        "SELECT token, created_at, modified_at, metainfo, encrypted_key, content
         FROM notes
         WHERE user_id = $1 AND token = $2 AND deleted_at IS NULL",
         user_id,
@@ -197,6 +200,7 @@ async fn get_note(user_id: i32, token: &str, db: &PgPool) -> Result<GetNoteRespo
         Some(row) => Ok(GetNoteResponse {
             id: token.to_string(),
             modified_at: row.modified_at,
+            created_at: row.created_at,
             metainfo: row.metainfo,
             encrypted_key: row.encrypted_key,
             content: row.content,
@@ -333,7 +337,7 @@ async fn update_note(
 
 async fn list_notes(user_id: i32, db: &PgPool) -> Result<Vec<ListNoteResponse>, ApiError> {
     let mut rows = query!(
-        "SELECT token, modified_at, metainfo, encrypted_key 
+        "SELECT token, created_at, modified_at, metainfo, encrypted_key 
         FROM notes
         WHERE user_id = $1 AND deleted_at IS NULL",
         user_id
@@ -346,6 +350,7 @@ async fn list_notes(user_id: i32, db: &PgPool) -> Result<Vec<ListNoteResponse>, 
         notes.push(ListNoteResponse {
             id: note.token,
             modified_at: note.modified_at,
+            created_at: note.created_at,
             metainfo: note.metainfo,
             encrypted_key: note.encrypted_key,
         });
@@ -359,7 +364,7 @@ async fn list_deleted_notes(
     db: &PgPool,
 ) -> Result<Vec<ListDeletedNoteResponse>, ApiError> {
     let mut rows = query!(
-        "SELECT token, modified_at, deleted_at, metainfo, encrypted_key 
+        "SELECT token, created_at, modified_at, deleted_at, metainfo, encrypted_key 
         FROM notes
         WHERE user_id = $1 AND deleted_at IS NOT NULL",
         user_id
@@ -372,6 +377,7 @@ async fn list_deleted_notes(
         notes.push(ListDeletedNoteResponse {
             id: note.token,
             modified_at: note.modified_at,
+            created_at: note.created_at,
             deleted_at: note.deleted_at.unwrap(),
             metainfo: note.metainfo,
             encrypted_key: note.encrypted_key,

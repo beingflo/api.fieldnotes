@@ -201,8 +201,8 @@ async fn main() {
                 access_share,
                 list_shares
             )
-            .with(cors)
-            .recover(handle_rejection),
+            .recover(handle_rejection)
+            .with(cors),
         )
         .run(listen),
         balance_decrease_schedule(pool.clone()),
