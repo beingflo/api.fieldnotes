@@ -174,7 +174,8 @@ async fn main() {
         )
         .allow_headers(vec!["content-type"])
         .allow_credentials(true)
-        .allow_methods(vec!["GET", "POST", "PUT", "DELETE"]);
+        .allow_methods(vec!["GET", "POST", "PUT", "DELETE"])
+        .build();
 
     let listen: SocketAddr = dotenv::var("LISTEN")
         .expect("LISTEN env variable missing")
@@ -201,8 +202,8 @@ async fn main() {
                 access_share,
                 list_shares
             )
-            .with(cors)
-            .recover(handle_rejection),
+            .recover(handle_rejection)
+            .with(cors),
         )
         .run(listen),
         balance_decrease_schedule(pool.clone()),
