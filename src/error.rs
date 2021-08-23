@@ -1,6 +1,7 @@
 use log::error;
 use thiserror::Error;
 use warp::http::StatusCode;
+use warp::reject::{InvalidHeader, MissingCookie};
 use warp::{Rejection, Reply};
 
 #[derive(Error, Debug)]
@@ -22,6 +23,16 @@ impl warp::reject::Reject for ApiError {}
 
 /// Turn rejections into appropriate status codes
 pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
+    if let Some(_) = err.find::<MissingCookie>() {
+      error!("Unauthorized access");
+      return Ok(StatusCode::UNAUTHORIZED);
+    }
+
+    if let Some(_) = err.find::<InvalidHeader>() {
+      error!("Unauthorized access");
+      return Ok(StatusCode::UNAUTHORIZED);
+    }
+
     if let Some(custom_error) = err.find::<ApiError>() {
         match custom_error {
             ApiError::DBError(db_error) => {
