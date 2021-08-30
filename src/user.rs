@@ -12,8 +12,8 @@ use warp::Reply;
 /// Balance is stored as CHF * 10^6 to avoid significant rounding errors
 
 /// Default starting balance for new users
-/// 0.5 CHF = 500'000
-pub const DEFAULT_BALANCE: i64 = 500_000;
+/// 1.0 CHF = 1'000'000
+pub const DEFAULT_BALANCE: i64 = 1_000_000;
 
 /// Once balance falls below this threshold,
 /// account becomes read only

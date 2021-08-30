@@ -4,7 +4,7 @@ use log::{error, info};
 use sqlx::{query, PgPool};
 use tokio::time::{interval_at, Instant};
 
-const DAILY_BALANCE_DECREASE: i64 = 16_438;
+const DAILY_BALANCE_DECREASE: i64 = 32_876;
 
 pub async fn balance_decrease_schedule(db: PgPool) {
     let midnight = {
