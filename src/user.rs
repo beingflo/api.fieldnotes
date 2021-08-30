@@ -19,6 +19,10 @@ pub const DEFAULT_BALANCE: i64 = 1_000_000;
 /// account becomes read only
 pub const FUNDED_BALANCE: i64 = -500_000;
 
+/// Cost per day calculated as: CHF 1 / Month = CHF 12 / Year
+/// CHF 12 / 365 days per year = CHF 0.032876 / Day
+pub const DAILY_BALANCE_COST: i64 = 32_876;
+
 /// Cost of bcrypt hashing algorithm
 const BCRYPT_COST: u32 = 12;
 
@@ -41,6 +45,7 @@ pub struct PasswordChangeRequest {
 #[derive(Serialize)]
 pub struct UserInfoResponse {
     balance: f64,
+    remaining_days: f64,
 }
 
 /// Sign up new user. This stores the user data in the db.
@@ -170,9 +175,11 @@ pub async fn user_info_handler(
     info!("Get info info of user {}", user_id);
 
     let balance = get_user_balance(user_id, &db).await?;
+    let remaining_days = balance as f64 / DAILY_BALANCE_COST as f64;
 
     Ok(warp::reply::json(&UserInfoResponse {
         balance: balance as f64 / 1_000_000.0,
+        remaining_days,
     }))
 }
 

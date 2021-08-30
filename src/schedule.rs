@@ -1,10 +1,8 @@
-use crate::authentication::TOKEN_EXPIRATION_WEEKS;
+use crate::{authentication::TOKEN_EXPIRATION_WEEKS, user::DAILY_BALANCE_COST};
 use chrono::{Duration, Utc};
 use log::{error, info};
 use sqlx::{query, PgPool};
 use tokio::time::{interval_at, Instant};
-
-const DAILY_BALANCE_DECREASE: i64 = 32_876;
 
 pub async fn balance_decrease_schedule(db: PgPool) {
     let midnight = {
@@ -40,7 +38,7 @@ async fn decrease_balances(db: &PgPool) {
         "UPDATE users 
         SET balance = balance - $1
         WHERE deleted_at IS NULL;",
-        DAILY_BALANCE_DECREASE,
+        DAILY_BALANCE_COST,
     )
     .execute(db)
     .await
