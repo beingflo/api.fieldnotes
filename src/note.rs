@@ -16,9 +16,17 @@ pub struct SaveRequest {
     content: String,
 }
 
-/// Response to save / update note
+/// Response to save note
 #[derive(Serialize)]
 pub struct SaveNoteResponse {
+    id: String,
+    modified_at: DateTime<Utc>,
+    created_at: DateTime<Utc>,
+}
+
+/// Response to update note 
+#[derive(Serialize)]
+pub struct UpdateNoteResponse {
     id: String,
     modified_at: DateTime<Utc>,
 }
@@ -87,6 +95,7 @@ pub async fn save_note_handler(
     Ok(warp::reply::json(&SaveNoteResponse {
         id: token.clone(),
         modified_at: now,
+        created_at: now,
     }))
 }
 
@@ -159,7 +168,7 @@ pub async fn update_note_handler(
     )
     .await?;
 
-    Ok(warp::reply::json(&SaveNoteResponse {
+    Ok(warp::reply::json(&UpdateNoteResponse {
         id: token.clone(),
         modified_at: now,
     }))
