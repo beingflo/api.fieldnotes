@@ -5,5 +5,5 @@ CREATE TABLE shares
   note_id integer NOT NULL REFERENCES notes(id),
   user_id integer NOT NULL REFERENCES users(id),
   created_at TIMESTAMPTZ NOT NULL,
-  expires_at TIMESTAMPTZ NOT NULL
+  expires_at TIMESTAMPTZ
 );
