@@ -3,16 +3,17 @@ use crate::util::get_note_token;
 use chrono::{DateTime, Utc};
 use log::info;
 use serde::{Deserialize, Serialize};
-use sqlx::{query, PgPool};
+use sqlx::{PgPool, query};
 use std::collections::HashMap;
 use tokio_stream::StreamExt;
-use warp::http::StatusCode;
+use warp::{http::StatusCode};
 
 /// Request to save note
 #[derive(Deserialize)]
 pub struct SaveRequest {
-    metainfo: String,
-    encrypted_key: String,
+    metadata: String,
+    key: String,
+    public: bool,
     content: String,
 }
 
@@ -37,8 +38,9 @@ pub struct ListNoteResponse {
     id: String,
     modified_at: DateTime<Utc>,
     created_at: DateTime<Utc>,
-    metainfo: String,
-    encrypted_key: String,
+    metadata: String,
+    key: String,
+    public: bool,
 }
 
 /// Response to list notes request
@@ -48,8 +50,9 @@ pub struct ListDeletedNoteResponse {
     modified_at: DateTime<Utc>,
     created_at: DateTime<Utc>,
     deleted_at: DateTime<Utc>,
-    metainfo: String,
-    encrypted_key: String,
+    metadata: String,
+    key: String,
+    public: bool,
 }
 
 /// Response to get note request
@@ -58,8 +61,9 @@ pub struct GetNoteResponse {
     id: String,
     modified_at: DateTime<Utc>,
     created_at: DateTime<Utc>,
-    metainfo: String,
-    encrypted_key: String,
+    metadata: String,
+    key: String,
+    public: bool,
     content: String,
 }
 
@@ -75,8 +79,9 @@ pub async fn save_note_handler(
     let token = get_note_token();
 
     let SaveRequest {
-        metainfo,
-        encrypted_key,
+        metadata,
+        key,
+        public,
         content,
     } = note;
 
@@ -85,8 +90,9 @@ pub async fn save_note_handler(
         &token,
         now,
         now,
-        &metainfo,
-        &encrypted_key,
+        &metadata,
+        &key,
+        public,
         &content,
         &db,
     )
@@ -152,8 +158,9 @@ pub async fn update_note_handler(
     let now = Utc::now();
 
     let SaveRequest {
-        metainfo,
-        encrypted_key,
+        metadata,
+        key,
+        public,
         content,
     } = note;
 
@@ -161,8 +168,9 @@ pub async fn update_note_handler(
         user_id,
         &token,
         now,
-        &metainfo,
-        &encrypted_key,
+        &metadata,
+        &key,
+        public,
         &content,
         &db,
     )
@@ -197,7 +205,7 @@ pub async fn list_notes_handler(
 
 async fn get_note(user_id: i32, token: &str, db: &PgPool) -> Result<GetNoteResponse, ApiError> {
     match query!(
-        "SELECT token, created_at, modified_at, metainfo, encrypted_key, content
+        "SELECT token, created_at, modified_at, metadata, key, public, content
         FROM notes
         WHERE user_id = $1 AND token = $2 AND deleted_at IS NULL",
         user_id,
@@ -210,8 +218,9 @@ async fn get_note(user_id: i32, token: &str, db: &PgPool) -> Result<GetNoteRespo
             id: token.to_string(),
             modified_at: row.modified_at,
             created_at: row.created_at,
-            metainfo: row.metainfo,
-            encrypted_key: row.encrypted_key,
+            metadata: row.metadata,
+            key: row.key,
+            public: row.public,
             content: row.content,
         }),
         None => Err(ApiError::Unauthorized),
@@ -223,20 +232,22 @@ async fn store_note(
     token: &str,
     created_at: DateTime<Utc>,
     modified_at: DateTime<Utc>,
-    metainfo: &str,
-    encrypted_key: &str,
+    metadata: &str,
+    key: &str,
+    public: bool,
     content: &str,
     db: &PgPool,
 ) -> Result<(), ApiError> {
     query!(
-        "INSERT INTO notes (token, user_id, created_at, modified_at, metainfo, encrypted_key, content)
-        VALUES ($1, $2, $3, $4, $5, $6, $7);",
+        "INSERT INTO notes (token, user_id, created_at, modified_at, metadata, key, public, content)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8);",
         token,
         user_id,
         created_at,
         modified_at,
-        metainfo,
-        encrypted_key,
+        metadata,
+        key,
+        public,
         content,
     )
     .execute(db)
@@ -314,18 +325,20 @@ async fn update_note(
     user_id: i32,
     token: &str,
     modified_at: DateTime<Utc>,
-    metainfo: &str,
-    encrypted_key: &str,
+    metadata: &str,
+    key: &str,
+    public: bool,
     content: &str,
     db: &PgPool,
 ) -> Result<(), ApiError> {
     let result = query!(
         "UPDATE notes
-        SET modified_at = $1, metainfo = $2, encrypted_key = $3, content = $4
-        WHERE user_id = $5 AND token = $6 AND deleted_at IS NULL",
+        SET modified_at = $1, metadata = $2, key = $3, public = $4, content = $5
+        WHERE user_id = $6 AND token = $7 AND deleted_at IS NULL",
         modified_at,
-        metainfo,
-        encrypted_key,
+        metadata,
+        key,
+        public,
         content,
         user_id,
         token,
@@ -346,7 +359,7 @@ async fn update_note(
 
 async fn list_notes(user_id: i32, db: &PgPool) -> Result<Vec<ListNoteResponse>, ApiError> {
     let mut rows = query!(
-        "SELECT token, created_at, modified_at, metainfo, encrypted_key 
+        "SELECT token, created_at, modified_at, metadata, key, public 
         FROM notes
         WHERE user_id = $1 AND deleted_at IS NULL",
         user_id
@@ -360,8 +373,9 @@ async fn list_notes(user_id: i32, db: &PgPool) -> Result<Vec<ListNoteResponse>, 
             id: note.token,
             modified_at: note.modified_at,
             created_at: note.created_at,
-            metainfo: note.metainfo,
-            encrypted_key: note.encrypted_key,
+            metadata: note.metadata,
+            key: note.key,
+            public: note.public,
         });
     }
 
@@ -373,7 +387,7 @@ async fn list_deleted_notes(
     db: &PgPool,
 ) -> Result<Vec<ListDeletedNoteResponse>, ApiError> {
     let mut rows = query!(
-        "SELECT token, created_at, modified_at, deleted_at, metainfo, encrypted_key 
+        "SELECT token, created_at, modified_at, deleted_at, metadata, key, public 
         FROM notes
         WHERE user_id = $1 AND deleted_at IS NOT NULL",
         user_id
@@ -388,8 +402,9 @@ async fn list_deleted_notes(
             modified_at: note.modified_at,
             created_at: note.created_at,
             deleted_at: note.deleted_at.unwrap(),
-            metainfo: note.metainfo,
-            encrypted_key: note.encrypted_key,
+            metadata: note.metadata,
+            key: note.key,
+            public: note.public,
         });
     }
 

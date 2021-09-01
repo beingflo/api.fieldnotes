@@ -31,7 +31,6 @@ pub struct ListShareResponse {
 /// Request to create share
 #[derive(Serialize)]
 pub struct AccessShareResponse {
-    metainfo: String,
     content: String,
 }
 
@@ -162,7 +161,7 @@ pub async fn access_share_handler(
 
 async fn access_share(token: &str, db: &PgPool) -> Result<AccessShareResponse, ApiError> {
     match query!(
-        "SELECT notes.metainfo, notes.content
+        "SELECT notes.content
         FROM notes 
         WHERE notes.id = (
             SELECT shares.note_id
@@ -175,7 +174,6 @@ async fn access_share(token: &str, db: &PgPool) -> Result<AccessShareResponse, A
     .await?
     {
         Some(row) => Ok(AccessShareResponse {
-            metainfo: row.metainfo,
             content: row.content,
         }),
         None => {
