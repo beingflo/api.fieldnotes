@@ -136,7 +136,7 @@ async fn main() {
         .and_then(note::undelete_note_handler);
 
     let create_share = warp::post()
-        .and(warp::path("share"))
+        .and(warp::path("shares"))
         .and(warp::path::end())
         .and(is_authorized_with_user.clone())
         .and(is_funded.clone())
@@ -145,7 +145,7 @@ async fn main() {
         .and_then(share::create_share_handler);
 
     let list_shares = warp::get()
-        .and(warp::path("share"))
+        .and(warp::path("shares"))
         .and(warp::path::end())
         .and(is_authorized_with_user.clone())
         .and(is_funded.clone())
@@ -153,7 +153,7 @@ async fn main() {
         .and_then(share::list_shares_handler);
 
     let delete_share = warp::delete()
-        .and(warp::path!("share" / String))
+        .and(warp::path!("shares" / String))
         .and(warp::path::end())
         .and(is_authorized_with_user.clone())
         .and(with_db.clone())
@@ -161,7 +161,7 @@ async fn main() {
 
     // Non-authorized access allowed here
     let access_share = warp::get()
-        .and(warp::path!("share" / String))
+        .and(warp::path!("shares" / String))
         .and(warp::path::end())
         .and(with_db.clone())
         .and_then(share::access_share_handler);
