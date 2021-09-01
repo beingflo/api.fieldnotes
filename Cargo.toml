@@ -20,7 +20,7 @@ rand = "0.8"
 lazy_static = "1.4.0"
 ring = "0.16.19"
 warp = "0.3"
-sqlx = { version = "0.5", features = [ "runtime-tokio-rustls", "postgres", "macros", "migrate", "uuid", "chrono" ] }
+sqlx = { version = "0.5", features = [ "runtime-tokio-rustls", "postgres", "macros", "migrate", "uuid", "chrono", "json" ] }
 thiserror = "1.0"
 
 [profile.dev]
