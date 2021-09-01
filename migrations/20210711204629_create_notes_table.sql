@@ -6,7 +6,8 @@ CREATE TABLE notes
   created_at TIMESTAMPTZ NOT NULL,
   modified_at TIMESTAMPTZ NOT NULL,
   deleted_at TIMESTAMPTZ,
-  encrypted_key varchar(200) NOT NULL,
-  metainfo varchar(1000) NOT NULL,
+  metadata text NOT NULL,
+  key varchar(64) NOT NULL,
+  public boolean NOT NULL,
   content text NOT NULL
 );
