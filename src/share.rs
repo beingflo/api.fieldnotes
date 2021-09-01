@@ -1,6 +1,6 @@
 use crate::error::ApiError;
 use crate::util::get_share_token;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use sqlx::{query, PgPool};
@@ -11,21 +11,25 @@ use warp::http::StatusCode;
 #[derive(Deserialize)]
 pub struct CreateShareRequest {
     note: String,
+    expires_in: Option<i64>,
 }
 
 /// Request to create share
 #[derive(Serialize)]
 pub struct CreateShareResponse {
     token: String,
-    note_token: String,
+    note: String,
+    created_at: DateTime<Utc>,
+    expires_at: Option<DateTime<Utc>>,
 }
 
 /// List shares response
 #[derive(Serialize)]
 pub struct ListShareResponse {
     token: String,
-    note_token: String,
+    note: String,
     created_at: DateTime<Utc>,
+    expires_at: Option<DateTime<Utc>>,
 }
 
 /// Request to create share
@@ -45,11 +49,22 @@ pub async fn create_share_handler(
     let now = Utc::now();
     let token = get_share_token();
 
-    create_share(&token, &request.note, user_id, now, &db).await?;
+    let expires_at = {
+        let hours = request.expires_in;
+        if hours.is_none() {
+          None
+        } else {
+          Some(now + Duration::hours(hours.unwrap()))
+        }
+    };
+
+    create_share(&token, &request.note, user_id, now, expires_at, &db).await?;
 
     Ok(warp::reply::json(&CreateShareResponse {
         token,
-        note_token: request.note,
+        created_at: now,
+        expires_at: expires_at,
+        note: request.note,
     }))
 }
 
@@ -58,16 +73,18 @@ async fn create_share(
     note: &str,
     user_id: i32,
     created_at: DateTime<Utc>,
+    expires_at: Option<DateTime<Utc>>,
     db: &PgPool,
 ) -> Result<(), ApiError> {
     let row = query!(
-        "INSERT INTO shares (token, note_id, user_id, created_at)
-        SELECT $1, id, $3, $4
+        "INSERT INTO shares (token, note_id, user_id, created_at, expires_at)
+        SELECT $1, id, $3, $4, $5
         FROM notes WHERE token = $2 AND user_id = $3 AND deleted_at IS NULL;",
         token,
         note,
         user_id,
-        created_at
+        created_at,
+        expires_at
     )
     .execute(db)
     .await?;
@@ -95,7 +112,7 @@ pub async fn list_shares_handler(
 
 async fn list_shares(user_id: i32, db: &PgPool) -> Result<Vec<ListShareResponse>, ApiError> {
     let mut rows = query!(
-        "SELECT shares.token, notes.token AS note_token, shares.created_at
+        "SELECT shares.token, shares.expires_at, notes.token AS note_token, shares.created_at
         FROM shares 
         INNER JOIN notes ON shares.note_id = notes.id
         WHERE shares.user_id = $1;",
@@ -108,7 +125,8 @@ async fn list_shares(user_id: i32, db: &PgPool) -> Result<Vec<ListShareResponse>
     while let Some(note) = rows.try_next().await? {
         shares.push(ListShareResponse {
             token: note.token,
-            note_token: note.note_token,
+            note: note.note_token,
+            expires_at: note.expires_at,
             created_at: note.created_at,
         });
     }
