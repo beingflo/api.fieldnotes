@@ -33,6 +33,17 @@ pub struct UserCredentials {
     password: String,
 }
 
+pub struct UserInfo {
+    balance: i64 ,
+    salt: Option<String>,
+}
+
+/// This request form is expected for storing salt
+#[derive(Deserialize)]
+pub struct UserSaltRequest {
+    salt: String,
+}
+
 /// This request form is expected for changing password
 #[derive(Deserialize)]
 pub struct PasswordChangeRequest {
@@ -41,10 +52,11 @@ pub struct PasswordChangeRequest {
     password_new: String,
 }
 
-/// Response to save / update note
+/// Response to User info request
 #[derive(Serialize)]
 pub struct UserInfoResponse {
     balance: f64,
+    salt: Option<String>,
     remaining_days: f64,
 }
 
@@ -174,13 +186,27 @@ pub async fn user_info_handler(
 ) -> Result<impl warp::Reply, warp::Rejection> {
     info!("Get info info of user {}", user_id);
 
-    let balance = get_user_balance(user_id, &db).await?;
-    let remaining_days = balance as f64 / DAILY_BALANCE_COST as f64;
+    let user_info = get_user_info(user_id, &db).await?;
+    let remaining_days = user_info.balance as f64 / DAILY_BALANCE_COST as f64;
 
     Ok(warp::reply::json(&UserInfoResponse {
-        balance: balance as f64 / 1_000_000.0,
+        balance: user_info.balance as f64 / 1_000_000.0,
         remaining_days,
+        salt: user_info.salt,
     }))
+}
+
+/// Store user salt
+pub async fn store_salt_handler(
+    user_id: i32,
+    salt: UserSaltRequest,
+    db: PgPool,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    info!("Store salt for user {}", user_id);
+
+    store_salt(user_id, &salt.salt, &db).await?;
+
+    Ok(StatusCode::OK)
 }
 
 /// Log out user. This deletes auth_token and overrides existing http-only cookies.
@@ -198,18 +224,18 @@ pub async fn logout(
 }
 
 pub async fn is_funded(user_id: i32, db: PgPool) -> Result<(), warp::Rejection> {
-    let balance = get_user_balance(user_id, &db).await?;
+    let user_info = get_user_info(user_id, &db).await?;
 
-    if balance > FUNDED_BALANCE {
+    if user_info.balance > FUNDED_BALANCE {
         Ok(())
     } else {
         Err(warp::reject::custom(ApiError::Underfunded))
     }
 }
 
-async fn get_user_balance(user_id: i32, db: &PgPool) -> Result<i64, ApiError> {
+async fn get_user_info(user_id: i32, db: &PgPool) -> Result<UserInfo, ApiError> {
     match query!(
-        "SELECT balance
+        "SELECT balance, salt
         FROM users 
         WHERE id = $1;",
         user_id,
@@ -217,8 +243,29 @@ async fn get_user_balance(user_id: i32, db: &PgPool) -> Result<i64, ApiError> {
     .fetch_one(db)
     .await
     {
-        Ok(row) => Ok(row.balance),
+        Ok(row) => Ok(UserInfo { balance: row.balance, salt: row.salt }),
         Err(error) => Err(ApiError::DBError(error)),
+    }
+}
+
+// Update password of existing user
+async fn store_salt(user_id: i32, salt: &str, db: &PgPool) -> Result<(), ApiError> {
+    let result = query!(
+        "UPDATE users 
+        SET salt = $1
+        WHERE id = $2",
+        salt,
+        user_id,
+    )
+    .execute(db)
+    .await?;
+
+    if result.rows_affected() == 1 {
+        Ok(())
+    } else {
+        Err(ApiError::ViolatedAssertion(
+            "Multiple rows affected when storing salt".to_string(),
+        ))
     }
 }
 

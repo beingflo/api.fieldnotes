@@ -88,6 +88,14 @@ async fn main() {
         .and(with_db.clone())
         .and_then(user::user_info_handler);
 
+    let store_salt = warp::put()
+        .and(warp::path!("user" / "salt"))
+        .and(warp::path::end())
+        .and(is_authorized_with_user.clone())
+        .and(warp::body::json())
+        .and(with_db.clone())
+        .and_then(user::store_salt_handler);
+
     let list_notes = warp::get()
         .and(warp::path("notes"))
         .and(warp::path::end())
@@ -190,6 +198,7 @@ async fn main() {
                 logout,
                 delete_user,
                 user_info,
+                store_salt,
                 change_password,
                 list_notes,
                 get_note,
