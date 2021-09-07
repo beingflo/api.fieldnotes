@@ -141,9 +141,9 @@ pub async fn undelete_note_handler(
 ) -> Result<impl warp::Reply, warp::Rejection> {
     info!("Undeleting note for user {}", user_id);
 
-    undelete_note(user_id, &token, &db).await?;
+    let note: GetNoteResponse = undelete_note(user_id, &token, &db).await?;
 
-    Ok(StatusCode::OK)
+    Ok(warp::reply::json(&note))
 }
 
 /// Update an existing note
@@ -299,25 +299,28 @@ async fn delete_note(
     }
 }
 
-async fn undelete_note(user_id: i32, token: &str, db: &PgPool) -> Result<(), ApiError> {
-    let result = query!(
+async fn undelete_note(user_id: i32, token: &str, db: &PgPool) -> Result<GetNoteResponse, ApiError> {
+    match query!(
         "UPDATE notes
         SET deleted_at = NULL
-        WHERE user_id = $1 AND token = $2 AND deleted_at IS NOT NULL",
+        WHERE user_id = $1 AND token = $2 AND deleted_at IS NOT NULL
+        RETURNING token, created_at, modified_at, metadata, content, key, public",
         user_id,
         token,
     )
-    .execute(db)
-    .await?;
-
-    if result.rows_affected() == 1 {
-        Ok(())
-    } else if result.rows_affected() == 0 {
-        Err(ApiError::Unauthorized)
-    } else {
-        Err(ApiError::ViolatedAssertion(
-            "Multiple rows affected when updating note".to_string(),
-        ))
+    .fetch_optional(db)
+    .await?
+    {
+        Some(row) => Ok(GetNoteResponse {
+            id: token.to_string(),
+            modified_at: row.modified_at,
+            created_at: row.created_at,
+            metadata: row.metadata,
+            key: row.key,
+            public: row.public,
+            content: row.content,
+        }),
+        None => Err(ApiError::Unauthorized),
     }
 }
 

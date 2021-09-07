@@ -7,7 +7,7 @@ CREATE TABLE notes
   modified_at TIMESTAMPTZ NOT NULL,
   deleted_at TIMESTAMPTZ,
   metadata text NOT NULL,
-  key varchar(64) NOT NULL,
+  key text NOT NULL,
   public boolean NOT NULL,
   content text NOT NULL
 );
