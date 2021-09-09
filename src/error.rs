@@ -17,6 +17,9 @@ pub enum ApiError {
 
     #[error("Underfunded")]
     Underfunded,
+
+    #[error("Conflict")]
+    Conflict,
 }
 
 impl warp::reject::Reject for ApiError {}
@@ -50,6 +53,10 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
             ApiError::Underfunded => {
                 error!("Underfunded account trying write");
                 return Ok(StatusCode::PAYMENT_REQUIRED);
+            }
+            ApiError::Conflict => {
+                error!("Conflicting write");
+                return Ok(StatusCode::CONFLICT);
             }
         }
     }

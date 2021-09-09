@@ -3,9 +3,9 @@ use crate::util::get_share_token;
 use chrono::{DateTime, Duration, Utc};
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
-use sqlx::{query, PgPool};
+use sqlx::{PgPool, query};
 use tokio_stream::StreamExt;
-use warp::http::StatusCode;
+use warp::{http::StatusCode};
 
 /// Request to create share
 #[derive(Deserialize)]
@@ -58,6 +58,9 @@ pub async fn create_share_handler(
         }
     };
 
+    if share_exists(&request.note, &db).await? {
+      return Err(ApiError::Conflict.into());
+    }
     create_share(&token, &request.note, user_id, now, expires_at, &db).await?;
 
     Ok(warp::reply::json(&CreateShareResponse {
@@ -66,6 +69,25 @@ pub async fn create_share_handler(
         expires_at: expires_at,
         note: request.note,
     }))
+}
+
+async fn share_exists(note_token: &str, db: &PgPool) -> Result<bool, ApiError> {
+    match query!(
+        "SELECT shares.id
+        FROM shares 
+        WHERE shares.note_id = (
+            SELECT notes.id
+            FROM notes 
+            WHERE notes.token = $1
+        );",
+       note_token 
+    )
+    .fetch_optional(db)
+    .await?
+    {
+        Some(_) => Ok(true),
+        None => Ok(false),
+    }
 }
 
 async fn create_share(
@@ -79,7 +101,7 @@ async fn create_share(
     let row = query!(
         "INSERT INTO shares (token, note_id, user_id, created_at, expires_at)
         SELECT $1, id, $3, $4, $5
-        FROM notes WHERE token = $2 AND user_id = $3 AND deleted_at IS NULL;",
+        FROM notes WHERE token = $2 AND user_id = $3 AND deleted_at IS NULL",
         token,
         note,
         user_id,
