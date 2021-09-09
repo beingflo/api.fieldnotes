@@ -136,7 +136,7 @@ async fn main() {
         .and(with_db.clone())
         .and_then(note::delete_note_handler);
 
-    let undelete_note = warp::post()
+    let undelete_note = warp::get()
         .and(warp::path!("notes" / "undelete" / String))
         .and(warp::path::end())
         .and(is_authorized_with_user.clone())
