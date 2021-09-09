@@ -156,7 +156,6 @@ async fn main() {
         .and(warp::path("shares"))
         .and(warp::path::end())
         .and(is_authorized_with_user.clone())
-        .and(is_funded.clone())
         .and(with_db.clone())
         .and_then(share::list_shares_handler);
 
