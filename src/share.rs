@@ -193,6 +193,17 @@ pub async fn access_share_handler(
     db: PgPool,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     info!("Accessing share");
+    let expires_at= get_share_expiration(&token, &db).await?;
+
+    let now = Utc::now();
+
+    if let Some(expires) = expires_at {
+      if expires < now {
+          warn!("Share expired {}", token);
+
+          return Err(warp::reject::custom(ApiError::Unauthorized))
+      }
+    }
 
     let note = access_share(&token, &db).await?;
 
@@ -216,6 +227,24 @@ async fn access_share(token: &str, db: &PgPool) -> Result<AccessShareResponse, A
         Some(row) => Ok(AccessShareResponse {
             content: row.content,
         }),
+        None => {
+            warn!("Invalid share token {}", token);
+            Err(ApiError::Unauthorized)
+        }
+    }
+}
+
+async fn get_share_expiration(token: &str, db: &PgPool) -> Result<Option<DateTime<Utc>>, ApiError> {
+    match query!(
+        "SELECT expires_at
+        FROM shares 
+        WHERE token= $1",
+        token
+    )
+    .fetch_optional(db)
+    .await?
+    {
+        Some(row) => Ok(row.expires_at),
         None => {
             warn!("Invalid share token {}", token);
             Err(ApiError::Unauthorized)
