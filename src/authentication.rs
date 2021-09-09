@@ -26,25 +26,6 @@ pub async fn is_authorized_with_user(token: String, db: PgPool) -> Result<i32, w
     }
 }
 
-pub async fn get_user_id(token: String, db: PgPool) -> Result<i32, warp::Rejection> {
-    match query!(
-        "SELECT user_id
-        FROM auth_tokens 
-        WHERE token = $1",
-        &token
-    )
-    .fetch_optional(&db)
-    .await
-    .map_err(|e| reject::custom(ApiError::DBError(e)))?
-    {
-        Some(tok) => Ok(tok.user_id),
-        None => {
-            warn!("Invalid token {}", token);
-            Err(warp::reject::custom(ApiError::Unauthorized))
-        }
-    }
-}
-
 // Get user_id and creation date of provided token
 async fn get_auth_token_info(
     token: &str,

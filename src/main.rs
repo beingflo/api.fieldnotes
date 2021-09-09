@@ -36,7 +36,7 @@ async fn main() {
 
     let with_user = with_token
         .and(with_db.clone())
-        .and_then(authentication::get_user_id);
+        .and_then(authentication::is_authorized_with_user);
 
     let is_authorized_with_user = with_token
         .and(with_db.clone())
