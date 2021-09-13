@@ -9,7 +9,7 @@ use warp::hyper::Body;
 const AUTH_TOKEN_LENGTH: usize = 128;
 
 /// Number of alphanumeric chars in share tokens
-const SHARE_TOKEN_LENGTH: usize = 64;
+const SHARE_TOKEN_LENGTH: usize = 32;
 
 /// Number of alphanumeric chars in note tokens
 const NOTE_TOKEN_LENGTH: usize = 32;
