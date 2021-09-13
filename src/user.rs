@@ -26,11 +26,19 @@ pub const DAILY_BALANCE_COST: i64 = 32_876;
 /// Cost of bcrypt hashing algorithm
 const BCRYPT_COST: u32 = 12;
 
-/// This request form is expected for signup and login calls.
+/// This request form is expected for login calls.
 #[derive(Deserialize)]
 pub struct UserCredentials {
     name: String,
     password: String,
+}
+
+/// This request form is expected for signupg calls.
+#[derive(Deserialize)]
+pub struct SignupCredentials {
+    name: String,
+    password: String,
+    email: Option<String>,
 }
 
 pub struct UserInfo {
@@ -62,7 +70,7 @@ pub struct UserInfoResponse {
 
 /// Sign up new user. This stores the user data in the db.
 pub async fn signup(
-    user: UserCredentials,
+    user: SignupCredentials,
     db: PgPool,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     info!("Creating user {}", user.name);
@@ -82,7 +90,7 @@ pub async fn signup(
 
     let now = Utc::now();
 
-    store_user(&user.name, &hashed_password, now, &db).await?;
+    store_user(&user.name, &hashed_password, user.email, now, &db).await?;
 
     Ok(StatusCode::OK)
 }
@@ -343,14 +351,16 @@ async fn user_exists_and_matches_id(
 async fn store_user(
     name: &str,
     password_hash: &str,
+    email: Option<String>,
     time: DateTime<Utc>,
     db: &PgPool,
 ) -> Result<(), ApiError> {
     let query_result = query!(
-        "INSERT INTO users (username, password, created_at, balance)
-        VALUES ($1, $2, $3, $4);",
+        "INSERT INTO users (username, password, email, created_at, balance)
+        VALUES ($1, $2, $3, $4, $5);",
         name,
         password_hash,
+        email,
         time,
         DEFAULT_BALANCE
     )

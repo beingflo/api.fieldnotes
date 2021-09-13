@@ -11,6 +11,7 @@ use warp::{http::StatusCode};
 #[derive(Deserialize)]
 pub struct CreateShareRequest {
     note: String,
+    public: Option<String>,
     expires_in: Option<i64>,
 }
 
@@ -19,6 +20,7 @@ pub struct CreateShareRequest {
 pub struct CreateShareResponse {
     token: String,
     note: String,
+    public: Option<String>,
     created_at: DateTime<Utc>,
     expires_at: Option<DateTime<Utc>>,
 }
@@ -28,6 +30,7 @@ pub struct CreateShareResponse {
 pub struct ListShareResponse {
     token: String,
     note: String,
+    public: Option<String>,
     created_at: DateTime<Utc>,
     expires_at: Option<DateTime<Utc>>,
 }
@@ -61,13 +64,14 @@ pub async fn create_share_handler(
     if share_exists(&request.note, &db).await? {
       return Err(ApiError::Conflict.into());
     }
-    create_share(&token, &request.note, user_id, now, expires_at, &db).await?;
+    create_share(&token, &request.note, user_id, &request.public, now, expires_at, &db).await?;
 
     Ok(warp::reply::json(&CreateShareResponse {
         token,
         created_at: now,
         expires_at: expires_at,
         note: request.note,
+        public: request.public,
     }))
 }
 
@@ -94,19 +98,21 @@ async fn create_share(
     token: &str,
     note: &str,
     user_id: i32,
+    public: &Option<String>,
     created_at: DateTime<Utc>,
     expires_at: Option<DateTime<Utc>>,
     db: &PgPool,
 ) -> Result<(), ApiError> {
     let row = query!(
-        "INSERT INTO shares (token, note_id, user_id, created_at, expires_at)
-        SELECT $1, id, $3, $4, $5
+        "INSERT INTO shares (token, note_id, user_id, created_at, expires_at, public)
+        SELECT $1, id, $3, $4, $5, $6
         FROM notes WHERE token = $2 AND user_id = $3 AND deleted_at IS NULL",
         token,
         note,
         user_id,
         created_at,
-        expires_at
+        expires_at,
+        *public,
     )
     .execute(db)
     .await?;
@@ -134,7 +140,7 @@ pub async fn list_shares_handler(
 
 async fn list_shares(user_id: i32, db: &PgPool) -> Result<Vec<ListShareResponse>, ApiError> {
     let mut rows = query!(
-        "SELECT shares.token, shares.expires_at, notes.token AS note_token, shares.created_at
+        "SELECT shares.token, shares.expires_at, notes.token AS note_token, shares.created_at, shares.public
         FROM shares 
         INNER JOIN notes ON shares.note_id = notes.id
         WHERE shares.user_id = $1;",
@@ -150,6 +156,7 @@ async fn list_shares(user_id: i32, db: &PgPool) -> Result<Vec<ListShareResponse>
             note: note.note_token,
             expires_at: note.expires_at,
             created_at: note.created_at,
+            public: note.public,
         });
     }
 

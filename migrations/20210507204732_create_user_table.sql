@@ -1,9 +1,10 @@
 CREATE TABLE users
 ( 
   id SERIAL PRIMARY KEY,
-  username varchar(50) NOT NULL UNIQUE,
-  password varchar(100) NOT NULL,
-  salt varchar(32),
+  username text NOT NULL UNIQUE,
+  password text NOT NULL,
+  email text,
+  salt text,
   created_at TIMESTAMPTZ NOT NULL,
   deleted_at TIMESTAMPTZ,
   balance BIGINT NOT NULL
