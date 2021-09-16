@@ -174,10 +174,15 @@ async fn main() {
         .and_then(share::access_share_handler);
 
     let cors = warp::cors()
-        .allow_origin(
-            dotenv::var("ALLOW_ORIGIN")
-                .expect("ALLOW_ORIGIN env variable missing")
-                .as_str(),
+        .allow_origins(
+          [
+            dotenv::var("WRITE_APP")
+                .expect("WRITE_APP env variable missing")
+                .as_str(), 
+            dotenv::var("READ_APP")
+                .expect("READ_APP env variable missing")
+                .as_str(), 
+          ]
         )
         .allow_headers(vec!["content-type"])
         .allow_credentials(true)
