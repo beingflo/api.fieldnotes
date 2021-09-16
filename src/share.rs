@@ -39,6 +39,7 @@ pub struct ListShareResponse {
 #[derive(Serialize)]
 pub struct AccessShareResponse {
     content: String,
+    key: String,
 }
 
 /// Create a new share from an existing note
@@ -219,7 +220,7 @@ pub async fn access_share_handler(
 
 async fn access_share(token: &str, db: &PgPool) -> Result<AccessShareResponse, ApiError> {
     match query!(
-        "SELECT notes.content
+        "SELECT notes.content, notes.key
         FROM notes 
         WHERE notes.id = (
             SELECT shares.note_id
@@ -233,6 +234,7 @@ async fn access_share(token: &str, db: &PgPool) -> Result<AccessShareResponse, A
     {
         Some(row) => Ok(AccessShareResponse {
             content: row.content,
+            key: row.key,
         }),
         None => {
             warn!("Invalid share token {}", token);
