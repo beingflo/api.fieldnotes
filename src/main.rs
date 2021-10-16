@@ -52,34 +52,34 @@ async fn main() {
         .and(warp::path("user"))
         .and(warp::body::json())
         .and(with_db.clone())
-        .and_then(users::signup);
+        .and_then(users::signup_handler);
 
     let change_password = warp::put()
         .and(warp::path("user"))
         .and(warp::body::json())
         .and(is_authorized_with_user.clone())
         .and(with_db.clone())
-        .and_then(users::change_password);
+        .and_then(users::change_password_handler);
 
     let logout = warp::delete()
         .and(warp::path("session"))
         .and(is_authorized_with_user.clone())
         .and(with_token)
         .and(with_db.clone())
-        .and_then(users::logout);
+        .and_then(users::logout_handler);
 
     let delete_user = warp::delete()
         .and(warp::path("user"))
         .and(warp::body::json())
         .and(is_authorized_with_user.clone())
         .and(with_db.clone())
-        .and_then(users::delete_user);
+        .and_then(users::delete_user_handler);
 
     let login = warp::post()
         .and(warp::path("session"))
         .and(warp::body::json())
         .and(with_db.clone())
-        .and_then(users::login);
+        .and_then(users::login_handler);
 
     let user_info = warp::get()
         .and(warp::path!("user" / "info"))

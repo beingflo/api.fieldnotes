@@ -16,7 +16,7 @@ pub struct SignupCredentials {
 }
 
 /// Sign up new user. This stores the user data in the db.
-pub async fn signup(
+pub async fn signup_handler(
     user: SignupCredentials,
     db: PgPool,
 ) -> Result<impl warp::Reply, warp::Rejection> {

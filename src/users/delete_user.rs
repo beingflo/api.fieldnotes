@@ -6,7 +6,7 @@ use sqlx::{query, PgPool};
 use warp::http::StatusCode;
 
 /// Delete user with all associated data
-pub async fn delete_user(
+pub async fn delete_user_handler(
     credentials: UserCredentials,
     user_id: i32,
     db: PgPool,

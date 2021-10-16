@@ -5,7 +5,7 @@ use log::info;
 use sqlx::PgPool;
 
 /// Log out user. This deletes auth_token and overrides existing http-only cookies.
-pub async fn logout(
+pub async fn logout_handler(
     user_id: i32,
     token: String,
     db: PgPool,

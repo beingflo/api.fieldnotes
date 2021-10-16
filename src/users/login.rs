@@ -8,7 +8,7 @@ use warp::http::StatusCode;
 use warp::Reply;
 
 /// Log in existing user, this sets username and token cookies for future requests.
-pub async fn login(user: UserCredentials, db: PgPool) -> Result<impl warp::Reply, warp::Rejection> {
+pub async fn login_handler(user: UserCredentials, db: PgPool) -> Result<impl warp::Reply, warp::Rejection> {
     info!("Login user {}", user.name);
 
     if !user_exists_and_is_active(&user.name, &db).await? {

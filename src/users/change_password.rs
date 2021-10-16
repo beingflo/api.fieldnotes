@@ -15,7 +15,7 @@ pub struct PasswordChangeRequest {
 }
 
 /// Change password of existing user
-pub async fn change_password(
+pub async fn change_password_handler(
     credentials: PasswordChangeRequest,
     user_id: i32,
     db: PgPool,
@@ -45,13 +45,13 @@ pub async fn change_password(
 
     let hashed_password = hashed_password.unwrap();
 
-    update_password(user_id, &hashed_password, &db).await?;
+    change_password(user_id, &hashed_password, &db).await?;
 
     Ok(StatusCode::OK)
 }
 
 // Update password of existing user
-async fn update_password(user_id: i32, password_hash: &str, db: &PgPool) -> Result<(), ApiError> {
+async fn change_password(user_id: i32, password_hash: &str, db: &PgPool) -> Result<(), ApiError> {
     let result = query!(
         "UPDATE users 
         SET password = $1
