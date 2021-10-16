@@ -38,7 +38,7 @@ pub async fn save_note_handler(
         content,
     } = note;
 
-    store_note(user_id, &token, now, now, &metadata, &key, &content, &db).await?;
+    save_note(user_id, &token, now, now, &metadata, &key, &content, &db).await?;
 
     Ok(warp::reply::json(&SaveNoteResponse {
         id: token.clone(),
@@ -47,7 +47,7 @@ pub async fn save_note_handler(
     }))
 }
 
-async fn store_note(
+async fn save_note(
     user_id: i32,
     token: &str,
     created_at: DateTime<Utc>,
