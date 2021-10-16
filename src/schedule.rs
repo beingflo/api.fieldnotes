@@ -1,4 +1,4 @@
-use crate::{authentication::TOKEN_EXPIRATION_WEEKS, user::DAILY_BALANCE_COST};
+use crate::{authentication::TOKEN_EXPIRATION_WEEKS, users::DAILY_BALANCE_COST};
 use chrono::{Duration, Utc};
 use log::{error, info};
 use sqlx::{query, PgPool};

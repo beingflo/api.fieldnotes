@@ -5,7 +5,7 @@ mod helper;
 mod notes;
 mod schedule;
 mod share;
-mod user;
+mod users;
 mod util;
 
 use dotenv::dotenv;
@@ -45,48 +45,48 @@ async fn main() {
     let is_funded = with_user
         .clone()
         .and(with_db.clone())
-        .and_then(user::is_funded)
+        .and_then(users::is_funded)
         .untuple_one();
 
     let signup = warp::post()
         .and(warp::path("user"))
         .and(warp::body::json())
         .and(with_db.clone())
-        .and_then(user::signup);
+        .and_then(users::signup);
 
     let change_password = warp::put()
         .and(warp::path("user"))
         .and(warp::body::json())
         .and(is_authorized_with_user.clone())
         .and(with_db.clone())
-        .and_then(user::change_password);
+        .and_then(users::change_password);
 
     let logout = warp::delete()
         .and(warp::path("session"))
         .and(is_authorized_with_user.clone())
         .and(with_token)
         .and(with_db.clone())
-        .and_then(user::logout);
+        .and_then(users::logout);
 
     let delete_user = warp::delete()
         .and(warp::path("user"))
         .and(warp::body::json())
         .and(is_authorized_with_user.clone())
         .and(with_db.clone())
-        .and_then(user::delete_user);
+        .and_then(users::delete_user);
 
     let login = warp::post()
         .and(warp::path("session"))
         .and(warp::body::json())
         .and(with_db.clone())
-        .and_then(user::login);
+        .and_then(users::login);
 
     let user_info = warp::get()
         .and(warp::path!("user" / "info"))
         .and(warp::path::end())
         .and(is_authorized_with_user.clone())
         .and(with_db.clone())
-        .and_then(user::user_info_handler);
+        .and_then(users::user_info_handler);
 
     let store_salt = warp::put()
         .and(warp::path!("user" / "salt"))
@@ -94,7 +94,7 @@ async fn main() {
         .and(is_authorized_with_user.clone())
         .and(warp::body::json())
         .and(with_db.clone())
-        .and_then(user::store_salt_handler);
+        .and_then(users::store_salt_handler);
 
     let list_notes = warp::get()
         .and(warp::path("notes"))
