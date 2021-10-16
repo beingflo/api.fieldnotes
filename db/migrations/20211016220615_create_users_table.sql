@@ -1,3 +1,4 @@
+-- migrate:up
 CREATE TABLE users
 ( 
   id SERIAL PRIMARY KEY,
@@ -9,3 +10,6 @@ CREATE TABLE users
   deleted_at TIMESTAMPTZ,
   balance BIGINT NOT NULL
 );
+
+-- migrate:down
+DROP TABLE IF EXISTS users;

@@ -1,3 +1,4 @@
+-- migrate:up
 CREATE TABLE auth_tokens 
 ( 
   id SERIAL PRIMARY KEY,
@@ -5,3 +6,6 @@ CREATE TABLE auth_tokens
   token text NOT NULL UNIQUE,
   created_at TIMESTAMPTZ NOT NULL
 );
+
+-- migrate:down
+DROP TABLE IF EXISTS auth_tokens;

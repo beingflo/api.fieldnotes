@@ -1,3 +1,4 @@
+-- migrate:up
 CREATE TABLE shares 
 ( 
   id SERIAL PRIMARY KEY,
@@ -8,3 +9,6 @@ CREATE TABLE shares
   expires_at TIMESTAMPTZ,
   public text
 );
+
+-- migrate:down
+DROP TABLE IF EXISTS shares;

@@ -1,3 +1,4 @@
+-- migrate:up
 CREATE TABLE notes 
 ( 
   id SERIAL PRIMARY KEY,
@@ -10,3 +11,6 @@ CREATE TABLE notes
   key text NOT NULL,
   content text NOT NULL
 );
+
+-- migrate:down
+DROP TABLE IF EXISTS notes;
