@@ -1,9 +1,9 @@
-use crate::{error::ApiError};
+use crate::error::ApiError;
 use crate::util::get_share_token;
 use chrono::{DateTime, Duration, Utc};
-use log::{info};
+use log::info;
 use serde::{Deserialize, Serialize};
-use sqlx::{PgPool, query};
+use sqlx::{query, PgPool};
 
 /// Request to create share
 #[derive(Deserialize)]
@@ -37,16 +37,25 @@ pub async fn create_share_handler(
     let expires_at = {
         let hours = request.expires_in;
         if hours.is_none() {
-          None
+            None
         } else {
-          Some(now + Duration::hours(hours.unwrap()))
+            Some(now + Duration::hours(hours.unwrap()))
         }
     };
 
     if share_exists(&request.note, &db).await? {
-      return Err(ApiError::Conflict.into());
+        return Err(ApiError::Conflict.into());
     }
-    create_share(&token, &request.note, user_id, &request.public, now, expires_at, &db).await?;
+    create_share(
+        &token,
+        &request.note,
+        user_id,
+        &request.public,
+        now,
+        expires_at,
+        &db,
+    )
+    .await?;
 
     Ok(warp::reply::json(&CreateShareResponse {
         token,
@@ -98,7 +107,7 @@ async fn share_exists(note_token: &str, db: &PgPool) -> Result<bool, ApiError> {
             FROM notes 
             WHERE notes.token = $1
         );",
-       note_token 
+        note_token
     )
     .fetch_optional(db)
     .await?

@@ -1,8 +1,8 @@
 use crate::error::ApiError;
 use chrono::{DateTime, Utc};
-use log::{info};
-use serde::{Serialize};
-use sqlx::{PgPool, query};
+use log::info;
+use serde::Serialize;
+use sqlx::{query, PgPool};
 use tokio_stream::StreamExt;
 
 /// List publications response
@@ -28,7 +28,10 @@ pub async fn list_publications_handler(
     Ok(warp::reply::json(&shares))
 }
 
-async fn list_publications(username: String, db: &PgPool) -> Result<Vec<ListPublicationResponse>, ApiError> {
+async fn list_publications(
+    username: String,
+    db: &PgPool,
+) -> Result<Vec<ListPublicationResponse>, ApiError> {
     let mut rows = query!(
         "SELECT shares.token, notes.created_at, notes.modified_at, notes.metadata, notes.key, shares.public
         FROM shares 

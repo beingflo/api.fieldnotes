@@ -27,13 +27,13 @@ impl warp::reject::Reject for ApiError {}
 /// Turn rejections into appropriate status codes
 pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
     if let Some(_) = err.find::<MissingCookie>() {
-      error!("Unauthorized access");
-      return Ok(StatusCode::UNAUTHORIZED);
+        error!("Unauthorized access");
+        return Ok(StatusCode::UNAUTHORIZED);
     }
 
     if let Some(_) = err.find::<InvalidHeader>() {
-      error!("Unauthorized access");
-      return Ok(StatusCode::UNAUTHORIZED);
+        error!("Unauthorized access");
+        return Ok(StatusCode::UNAUTHORIZED);
     }
 
     if let Some(custom_error) = err.find::<ApiError>() {

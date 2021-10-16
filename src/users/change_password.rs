@@ -1,8 +1,8 @@
 use crate::error::ApiError;
-use crate::users::{BCRYPT_COST, get_password, user_exists_and_matches_id, verify_password};
-use bcrypt::{hash};
+use crate::users::{get_password, user_exists_and_matches_id, verify_password, BCRYPT_COST};
+use bcrypt::hash;
 use log::{info, warn};
-use serde::{Deserialize};
+use serde::Deserialize;
 use sqlx::{query, PgPool};
 use warp::http::StatusCode;
 

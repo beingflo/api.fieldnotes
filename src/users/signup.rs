@@ -1,9 +1,9 @@
 use crate::error::ApiError;
-use crate::users::{BCRYPT_COST, DEFAULT_BALANCE, user_exists};
-use bcrypt::{hash};
+use crate::users::{user_exists, BCRYPT_COST, DEFAULT_BALANCE};
+use bcrypt::hash;
 use chrono::{DateTime, Utc};
 use log::{info, warn};
-use serde::{Deserialize};
+use serde::Deserialize;
 use sqlx::{query, PgPool};
 use warp::http::StatusCode;
 
@@ -56,7 +56,7 @@ async fn store_user(
         password_hash,
         email,
         time,
-        DEFAULT_BALANCE 
+        DEFAULT_BALANCE
     )
     .execute(db)
     .await;

@@ -3,7 +3,7 @@ use crate::users::{get_password, user_exists_and_is_active, verify_password, Use
 use crate::util::{get_auth_token, get_cookie_headers};
 use chrono::{Duration, Utc};
 use log::{info, warn};
-use sqlx::{PgPool};
+use sqlx::PgPool;
 use warp::http::StatusCode;
 use warp::Reply;
 

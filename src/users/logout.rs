@@ -1,8 +1,8 @@
-use crate::authentication::{delete_auth_token};
-use crate::util::{get_cookie_headers};
-use chrono::{ Duration };
-use log::{info};
-use sqlx::{PgPool};
+use crate::authentication::delete_auth_token;
+use crate::util::get_cookie_headers;
+use chrono::Duration;
+use log::info;
+use sqlx::PgPool;
 
 /// Log out user. This deletes auth_token and overrides existing http-only cookies.
 pub async fn logout(

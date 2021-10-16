@@ -1,6 +1,6 @@
 use crate::error::ApiError;
-use log::{info};
-use serde::{Deserialize};
+use log::info;
+use serde::Deserialize;
 use sqlx::{query, PgPool};
 use warp::http::StatusCode;
 

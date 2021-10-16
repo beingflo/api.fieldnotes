@@ -1,8 +1,8 @@
 use crate::error::ApiError;
 use chrono::{DateTime, Utc};
 use log::info;
-use sqlx::{PgPool, query};
-use warp::{http::StatusCode};
+use sqlx::{query, PgPool};
+use warp::http::StatusCode;
 
 /// Delete an existing note
 pub async fn delete_note_handler(

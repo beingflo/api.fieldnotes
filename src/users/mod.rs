@@ -1,23 +1,23 @@
-mod signup;
-mod login;
-mod logout;
-mod info;
 mod change_password;
 mod delete_user;
+mod info;
+mod login;
+mod logout;
 mod salt;
+mod signup;
 
-pub use signup::signup;
-pub use login::login;
-pub use logout::logout;
+pub use change_password::change_password;
 pub use delete_user::delete_user;
 pub use info::user_info_handler;
-pub use change_password::change_password;
+pub use login::login;
+pub use logout::logout;
 pub use salt::store_salt_handler;
+pub use signup::signup;
 
 use crate::error::ApiError;
-use bcrypt::{verify};
+use bcrypt::verify;
 use log::{error, info, warn};
-use serde::{Deserialize};
+use serde::Deserialize;
 use sqlx::{query, PgPool};
 
 /// Balance is stored as CHF * 10^6 to avoid significant rounding errors
@@ -45,10 +45,9 @@ pub struct UserCredentials {
 }
 
 pub struct UserInfo {
-    balance: i64 ,
+    balance: i64,
     salt: Option<String>,
 }
-
 
 pub async fn is_funded(user_id: i32, db: PgPool) -> Result<(), warp::Rejection> {
     let user_info = get_user_info(user_id, &db).await?;
@@ -70,7 +69,10 @@ async fn get_user_info(user_id: i32, db: &PgPool) -> Result<UserInfo, ApiError> 
     .fetch_one(db)
     .await
     {
-        Ok(row) => Ok(UserInfo { balance: row.balance, salt: row.salt }),
+        Ok(row) => Ok(UserInfo {
+            balance: row.balance,
+            salt: row.salt,
+        }),
         Err(error) => Err(ApiError::DBError(error)),
     }
 }

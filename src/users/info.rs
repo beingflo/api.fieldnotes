@@ -1,7 +1,7 @@
-use crate::users::{DAILY_BALANCE_COST, get_user_info};
-use log::{info};
-use serde::{Serialize};
-use sqlx::{PgPool};
+use crate::users::{get_user_info, DAILY_BALANCE_COST};
+use log::info;
+use serde::Serialize;
+use sqlx::PgPool;
 
 /// Response to User info request
 #[derive(Serialize)]

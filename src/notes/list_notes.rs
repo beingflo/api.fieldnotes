@@ -1,8 +1,8 @@
 use crate::error::ApiError;
 use chrono::{DateTime, Utc};
 use log::info;
-use serde::{Serialize};
-use sqlx::{PgPool, query};
+use serde::Serialize;
+use sqlx::{query, PgPool};
 use std::collections::HashMap;
 use tokio_stream::StreamExt;
 

@@ -1,8 +1,8 @@
 use crate::error::ApiError;
 use chrono::{DateTime, Utc};
 use log::info;
-use serde::{Serialize};
-use sqlx::{PgPool, query};
+use serde::Serialize;
+use sqlx::{query, PgPool};
 
 /// Response to get note request
 #[derive(Serialize)]
@@ -28,7 +28,11 @@ pub async fn undelete_note_handler(
     Ok(warp::reply::json(&note))
 }
 
-async fn undelete_note(user_id: i32, token: &str, db: &PgPool) -> Result<UndeleteNoteResponse, ApiError> {
+async fn undelete_note(
+    user_id: i32,
+    token: &str,
+    db: &PgPool,
+) -> Result<UndeleteNoteResponse, ApiError> {
     match query!(
         "UPDATE notes
         SET deleted_at = NULL

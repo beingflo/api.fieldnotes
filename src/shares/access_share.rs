@@ -1,8 +1,8 @@
 use crate::{error::ApiError, shares::get_share_expiration};
 use chrono::{DateTime, Utc};
 use log::{info, warn};
-use serde::{Serialize};
-use sqlx::{PgPool, query};
+use serde::Serialize;
+use sqlx::{query, PgPool};
 
 /// Request to create share
 #[derive(Serialize)]
@@ -18,16 +18,16 @@ pub async fn access_share_handler(
     db: PgPool,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     info!("Accessing share");
-    let expires_at= get_share_expiration(&token, &db).await?;
+    let expires_at = get_share_expiration(&token, &db).await?;
 
     let now = Utc::now();
 
     if let Some(expires) = expires_at {
-      if expires < now {
-          warn!("Share expired {}", token);
+        if expires < now {
+            warn!("Share expired {}", token);
 
-          return Err(warp::reject::custom(ApiError::Unauthorized))
-      }
+            return Err(warp::reject::custom(ApiError::Unauthorized));
+        }
     }
 
     let note = access_share(&token, &db).await?;

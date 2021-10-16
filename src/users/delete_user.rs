@@ -1,6 +1,6 @@
 use crate::error::ApiError;
 use crate::users::{get_password, user_exists_and_matches_id, verify_password, UserCredentials};
-use chrono::{ Utc};
+use chrono::Utc;
 use log::{info, warn};
 use sqlx::{query, PgPool};
 use warp::http::StatusCode;

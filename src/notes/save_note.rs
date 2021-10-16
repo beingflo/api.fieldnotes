@@ -3,7 +3,7 @@ use crate::util::get_note_token;
 use chrono::{DateTime, Utc};
 use log::info;
 use serde::{Deserialize, Serialize};
-use sqlx::{PgPool, query};
+use sqlx::{query, PgPool};
 
 /// Request to save note
 #[derive(Deserialize)]
@@ -38,17 +38,7 @@ pub async fn save_note_handler(
         content,
     } = note;
 
-    store_note(
-        user_id,
-        &token,
-        now,
-        now,
-        &metadata,
-        &key,
-        &content,
-        &db,
-    )
-    .await?;
+    store_note(user_id, &token, now, now, &metadata, &key, &content, &db).await?;
 
     Ok(warp::reply::json(&SaveNoteResponse {
         id: token.clone(),

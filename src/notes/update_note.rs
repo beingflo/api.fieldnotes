@@ -2,7 +2,7 @@ use crate::error::ApiError;
 use chrono::{DateTime, Utc};
 use log::info;
 use serde::{Deserialize, Serialize};
-use sqlx::{PgPool, query};
+use sqlx::{query, PgPool};
 
 /// Request to save note
 #[derive(Deserialize)]
@@ -12,7 +12,7 @@ pub struct UpdateNoteRequest {
     content: String,
 }
 
-/// Response to update note 
+/// Response to update note
 #[derive(Serialize)]
 pub struct UpdateNoteResponse {
     id: String,
@@ -36,16 +36,7 @@ pub async fn update_note_handler(
         content,
     } = note;
 
-    update_note(
-        user_id,
-        &token,
-        now,
-        &metadata,
-        &key,
-        &content,
-        &db,
-    )
-    .await?;
+    update_note(user_id, &token, now, &metadata, &key, &content, &db).await?;
 
     Ok(warp::reply::json(&UpdateNoteResponse {
         id: token.clone(),

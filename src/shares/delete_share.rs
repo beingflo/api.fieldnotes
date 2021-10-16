@@ -1,7 +1,7 @@
 use crate::error::ApiError;
-use log::{info};
-use sqlx::{PgPool, query};
-use warp::{http::StatusCode};
+use log::info;
+use sqlx::{query, PgPool};
+use warp::http::StatusCode;
 
 pub async fn delete_share_handler(
     token: String,
