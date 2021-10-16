@@ -2,7 +2,7 @@ mod authentication;
 mod error;
 #[macro_use]
 mod helper;
-mod note;
+mod notes;
 mod schedule;
 mod share;
 mod user;
@@ -102,14 +102,14 @@ async fn main() {
         .and(warp::query::query())
         .and(is_authorized_with_user.clone())
         .and(with_db.clone())
-        .and_then(note::list_notes_handler);
+        .and_then(notes::list_notes_handler);
 
     let get_note = warp::get()
         .and(warp::path!("notes" / String))
         .and(warp::path::end())
         .and(is_authorized_with_user.clone())
         .and(with_db.clone())
-        .and_then(note::get_note_handler);
+        .and_then(notes::get_note_handler);
 
     let save_note = warp::post()
         .and(warp::path("notes"))
@@ -118,7 +118,7 @@ async fn main() {
         .and(is_funded.clone())
         .and(warp::body::json())
         .and(with_db.clone())
-        .and_then(note::save_note_handler);
+        .and_then(notes::save_note_handler);
 
     let update_note = warp::put()
         .and(warp::path!("notes" / String))
@@ -127,21 +127,21 @@ async fn main() {
         .and(is_funded.clone())
         .and(warp::body::json())
         .and(with_db.clone())
-        .and_then(note::update_note_handler);
+        .and_then(notes::update_note_handler);
 
     let delete_note = warp::delete()
         .and(warp::path!("notes" / String))
         .and(warp::path::end())
         .and(is_authorized_with_user.clone())
         .and(with_db.clone())
-        .and_then(note::delete_note_handler);
+        .and_then(notes::delete_note_handler);
 
     let undelete_note = warp::get()
         .and(warp::path!("notes" / "undelete" / String))
         .and(warp::path::end())
         .and(is_authorized_with_user.clone())
         .and(with_db.clone())
-        .and_then(note::undelete_note_handler);
+        .and_then(notes::undelete_note_handler);
 
     let create_share = warp::post()
         .and(warp::path("shares"))
