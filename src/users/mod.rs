@@ -6,12 +6,6 @@ mod change_password;
 mod delete_user;
 mod salt;
 
-use crate::error::ApiError;
-use bcrypt::{verify};
-use log::{error, info, warn};
-use serde::{Deserialize};
-use sqlx::{query, PgPool};
-
 pub use signup::signup;
 pub use login::login;
 pub use logout::logout;
@@ -19,6 +13,12 @@ pub use delete_user::delete_user;
 pub use info::user_info_handler;
 pub use change_password::change_password;
 pub use salt::store_salt_handler;
+
+use crate::error::ApiError;
+use bcrypt::{verify};
+use log::{error, info, warn};
+use serde::{Deserialize};
+use sqlx::{query, PgPool};
 
 /// Balance is stored as CHF * 10^6 to avoid significant rounding errors
 
