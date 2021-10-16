@@ -35,9 +35,22 @@ pub struct ListShareResponse {
     expires_at: Option<DateTime<Utc>>,
 }
 
+/// List publications response
+#[derive(Serialize)]
+pub struct ListPublicationResponse {
+    token: String,
+    created_at: DateTime<Utc>,
+    modified_at: DateTime<Utc>,
+    metadata: String,
+    public: String,
+    key: String,
+}
+
 /// Request to create share
 #[derive(Serialize)]
 pub struct AccessShareResponse {
+    created_at: DateTime<Utc>,
+    modified_at: DateTime<Utc>,
     content: String,
     key: String,
 }
@@ -127,6 +140,18 @@ async fn create_share(
     }
 }
 
+/// List published notes
+pub async fn list_publications_handler(
+    username: String,
+    db: PgPool,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    info!("Listing publications for user {}", username);
+
+    let shares = list_publications(username, &db).await?;
+
+    Ok(warp::reply::json(&shares))
+}
+
 /// List existing shares
 pub async fn list_shares_handler(
     user_id: i32,
@@ -162,6 +187,33 @@ async fn list_shares(user_id: i32, db: &PgPool) -> Result<Vec<ListShareResponse>
     }
 
     Ok(shares)
+}
+
+async fn list_publications(username: String, db: &PgPool) -> Result<Vec<ListPublicationResponse>, ApiError> {
+    let mut rows = query!(
+        "SELECT shares.token, notes.created_at, notes.modified_at, notes.metadata, notes.key, shares.public
+        FROM shares 
+        INNER JOIN notes ON shares.note_id = notes.id
+        INNER JOIN users ON notes.user_id = users.id
+        WHERE users.username = $1 AND shares.public IS NOT NULL",
+        username
+    )
+    .fetch(db);
+
+    let mut publications: Vec<ListPublicationResponse> = Vec::new();
+
+    while let Some(row) = rows.try_next().await? {
+        publications.push(ListPublicationResponse {
+            token: row.token,
+            created_at: row.created_at,
+            modified_at: row.modified_at,
+            metadata: row.metadata,
+            key: row.key,
+            public: row.public.unwrap(),
+        });
+    }
+
+    Ok(publications)
 }
 
 pub async fn delete_share_handler(
@@ -220,19 +272,18 @@ pub async fn access_share_handler(
 
 async fn access_share(token: &str, db: &PgPool) -> Result<AccessShareResponse, ApiError> {
     match query!(
-        "SELECT notes.content, notes.key
-        FROM notes 
-        WHERE notes.id = (
-            SELECT shares.note_id
-            FROM shares
-            WHERE shares.token = $1
-        );",
+        "SELECT notes.created_at, notes.modified_at, notes.content, notes.key 
+        FROM shares 
+        INNER JOIN notes ON shares.note_id = notes.id
+        WHERE shares.token = $1;",
         token
     )
     .fetch_optional(db)
     .await?
     {
         Some(row) => Ok(AccessShareResponse {
+            created_at: row.created_at,
+            modified_at: row.modified_at,
             content: row.content,
             key: row.key,
         }),

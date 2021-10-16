@@ -159,6 +159,13 @@ async fn main() {
         .and(with_db.clone())
         .and_then(share::list_shares_handler);
 
+    // Non-authorized access allowed here
+    let list_publications = warp::get()
+        .and(warp::path!("publications" / String))
+        .and(warp::path::end())
+        .and(with_db.clone())
+        .and_then(share::list_publications_handler);
+
     let delete_share = warp::delete()
         .and(warp::path!("shares" / String))
         .and(warp::path::end())
@@ -213,7 +220,8 @@ async fn main() {
                 create_share,
                 delete_share,
                 access_share,
-                list_shares
+                list_shares,
+                list_publications
             )
             .recover(handle_rejection)
             .with(cors),
