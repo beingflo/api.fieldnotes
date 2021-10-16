@@ -4,7 +4,7 @@ mod error;
 mod helper;
 mod notes;
 mod schedule;
-mod share;
+mod shares;
 mod users;
 mod util;
 
@@ -150,35 +150,35 @@ async fn main() {
         .and(is_funded.clone())
         .and(warp::body::json())
         .and(with_db.clone())
-        .and_then(share::create_share_handler);
+        .and_then(shares::create_share_handler);
 
     let list_shares = warp::get()
         .and(warp::path("shares"))
         .and(warp::path::end())
         .and(is_authorized_with_user.clone())
         .and(with_db.clone())
-        .and_then(share::list_shares_handler);
+        .and_then(shares::list_shares_handler);
 
     // Non-authorized access allowed here
     let list_publications = warp::get()
         .and(warp::path!("publications" / String))
         .and(warp::path::end())
         .and(with_db.clone())
-        .and_then(share::list_publications_handler);
+        .and_then(shares::list_publications_handler);
 
     let delete_share = warp::delete()
         .and(warp::path!("shares" / String))
         .and(warp::path::end())
         .and(is_authorized_with_user.clone())
         .and(with_db.clone())
-        .and_then(share::delete_share_handler);
+        .and_then(shares::delete_share_handler);
 
     // Non-authorized access allowed here
     let access_share = warp::get()
         .and(warp::path!("shares" / String))
         .and(warp::path::end())
         .and(with_db.clone())
-        .and_then(share::access_share_handler);
+        .and_then(shares::access_share_handler);
 
     let cors = warp::cors()
         .allow_origins(
