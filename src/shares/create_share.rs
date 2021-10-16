@@ -60,7 +60,7 @@ pub async fn create_share_handler(
     Ok(warp::reply::json(&CreateShareResponse {
         token,
         created_at: now,
-        expires_at: expires_at,
+        expires_at,
         note: request.note,
         public: request.public,
     }))
