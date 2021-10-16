@@ -19,9 +19,6 @@ pub async fn is_authorized_with_user(token: String, db: PgPool) -> Result<i32, w
         Ok(user_id)
     } else {
         warn!("Token expired for user {}", user_id);
-
-        delete_auth_token(&token, &db).await?;
-
         Err(warp::reject::custom(ApiError::Unauthorized))
     }
 }
