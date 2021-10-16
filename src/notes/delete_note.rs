@@ -25,6 +25,8 @@ async fn delete_note(
     deleted_at: DateTime<Utc>,
     db: &PgPool,
 ) -> Result<(), ApiError> {
+    let mut tx = db.begin().await?;
+
     let result = query!(
         "UPDATE notes
         SET deleted_at = $1
@@ -33,7 +35,7 @@ async fn delete_note(
         user_id,
         token,
     )
-    .execute(db)
+    .execute(&mut tx)
     .await?;
 
     // Delete shares of this note
@@ -48,16 +50,14 @@ async fn delete_note(
         token,
         user_id
     )
-    .execute(db)
+    .execute(&mut tx)
     .await?;
 
     if result.rows_affected() == 1 {
+        tx.commit().await?;
         Ok(())
-    } else if result.rows_affected() == 0 {
-        Err(ApiError::Unauthorized)
     } else {
-        Err(ApiError::ViolatedAssertion(
-            "Multiple rows affected when updating note".to_string(),
-        ))
+        tx.rollback().await?;
+        Err(ApiError::Unauthorized)
     }
 }
