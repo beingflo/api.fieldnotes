@@ -39,6 +39,15 @@ pub async fn delete_all_user_data(user_id: i32, db: &PgPool) -> Result<(), ApiEr
 
     query!(
         "DELETE
+        FROM shares 
+        WHERE user_id = $1;",
+        user_id
+    )
+    .execute(&mut tx)
+    .await?;
+
+    query!(
+        "DELETE
         FROM notes
         WHERE user_id = $1;",
         user_id
