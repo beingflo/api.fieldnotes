@@ -26,11 +26,9 @@ async fn delete_share(user_id: i32, token: &str, db: &PgPool) -> Result<(), ApiE
     .execute(db)
     .await?;
 
-    match row.rows_affected() {
-        0 => Err(ApiError::Unauthorized),
-        1 => Ok(()),
-        _ => Err(ApiError::ViolatedAssertion(
-            "Deleting share affected multiple rows".to_string(),
-        )),
+    if row.rows_affected() == 1 {
+        Ok(())
+    } else {
+        Err(ApiError::Unauthorized)
     }
 }

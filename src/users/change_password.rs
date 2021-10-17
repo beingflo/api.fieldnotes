@@ -66,7 +66,7 @@ async fn change_password(user_id: i32, password_hash: &str, db: &PgPool) -> Resu
         Ok(())
     } else {
         Err(ApiError::ViolatedAssertion(
-            "Multiple rows affected when updating note".to_string(),
+            "No rows affected when changing password".to_string(),
         ))
     }
 }

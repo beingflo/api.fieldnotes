@@ -69,11 +69,7 @@ async fn update_note(
 
     if result.rows_affected() == 1 {
         Ok(())
-    } else if result.rows_affected() == 0 {
-        Err(ApiError::Unauthorized)
     } else {
-        Err(ApiError::ViolatedAssertion(
-            "Multiple rows affected when updating note".to_string(),
-        ))
+        Err(ApiError::Unauthorized)
     }
 }

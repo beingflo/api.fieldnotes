@@ -39,7 +39,7 @@ async fn store_salt(user_id: i32, salt: &str, db: &PgPool) -> Result<(), ApiErro
         Ok(())
     } else {
         Err(ApiError::ViolatedAssertion(
-            "Multiple rows affected when storing salt".to_string(),
+            "No rows affected when storing salt".to_string(),
         ))
     }
 }

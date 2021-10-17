@@ -101,14 +101,18 @@ async fn get_user_info(user_id: i32, db: &PgPool) -> Result<UserInfo, ApiError> 
 
         if matches!(transaction.event, TransactionEvent::StartTextli) {
             if start_date.is_some() {
-                return Err(ApiError::ViolatedAssertion("Transactions corrupted".into()));
+                return Err(ApiError::ViolatedAssertion(
+                    "Transactions corrupted: Subsquent start dates".into(),
+                ));
             }
             start_date = Some(transaction.date);
         }
 
         if matches!(transaction.event, TransactionEvent::PauseTextli) {
             if start_date.is_none() {
-                return Err(ApiError::ViolatedAssertion("Transactions corrupted".into()));
+                return Err(ApiError::ViolatedAssertion(
+                    "Transactions corrupted: Pause event preceding start event".into(),
+                ));
             }
             let duration = transaction.date - start_date.unwrap();
             let hours = duration.num_hours();
