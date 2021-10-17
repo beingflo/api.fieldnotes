@@ -11,5 +11,5 @@ CREATE TABLE transactions
 );
 
 -- migrate:down
-DROP TABLE app_events;
-DROP TYPE event;
+DROP TABLE IF EXISTS app_events;
+DROP TYPE IF EXISTS event;
