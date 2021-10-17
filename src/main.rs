@@ -10,15 +10,40 @@ mod util;
 
 use dotenv::dotenv;
 use error::handle_rejection;
-use log::info;
+use log::{info, LevelFilter};
 use schedule::{notes_deletion_schedule, tokens_deletion_schedule};
+use simplelog::{
+    ColorChoice, CombinedLogger, ConfigBuilder, TermLogger, TerminalMode, WriteLogger,
+};
 use sqlx::postgres::PgPoolOptions;
-use std::net::SocketAddr;
+use std::{fs::File, net::SocketAddr};
 use warp::Filter;
 
 #[tokio::main]
 async fn main() {
-    pretty_env_logger::init();
+    CombinedLogger::init(vec![
+        TermLogger::new(
+            LevelFilter::Info,
+            ConfigBuilder::new()
+                .add_filter_allow_str("textli")
+                .set_time_format_str("%F %T")
+                .set_time_to_local(true)
+                .build(),
+            TerminalMode::Mixed,
+            ColorChoice::Auto,
+        ),
+        WriteLogger::new(
+            LevelFilter::Info,
+            ConfigBuilder::new()
+                .add_filter_allow_str("textli")
+                .set_time_format_str("%F %T")
+                .set_time_to_local(true)
+                .build(),
+            File::create("textli.log").unwrap(),
+        ),
+    ])
+    .unwrap();
+
     info!("Textli started");
 
     dotenv().ok();
