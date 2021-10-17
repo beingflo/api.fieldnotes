@@ -1,5 +1,5 @@
 use crate::error::ApiError;
-use crate::users::{user_exists, BCRYPT_COST, DEFAULT_BALANCE};
+use crate::users::{user_exists, TransactionEvent, BCRYPT_COST};
 use bcrypt::hash;
 use chrono::{DateTime, Utc};
 use log::{info, warn};
@@ -13,14 +13,6 @@ pub struct SignupCredentials {
     name: String,
     password: String,
     email: Option<String>,
-}
-
-#[derive(sqlx::Type)]
-#[sqlx(type_name = "event", rename_all = "lowercase")]
-enum Event {
-    StartTextli,
-    PauseTextli,
-    AddFunds,
 }
 
 /// Sign up new user. This stores the user data in the db.
@@ -58,14 +50,13 @@ async fn store_user(
     db: &PgPool,
 ) -> Result<(), ApiError> {
     let result = query!(
-        "INSERT INTO users (username, password, email, created_at, balance)
-        VALUES ($1, $2, $3, $4, $5)
+        "INSERT INTO users (username, password, email, created_at)
+        VALUES ($1, $2, $3, $4)
         RETURNING id;",
         name,
         password_hash,
         email,
         time,
-        DEFAULT_BALANCE
     )
     .fetch_one(db)
     .await?;
@@ -76,7 +67,7 @@ async fn store_user(
         "INSERT INTO transactions (user_id, event, date)
         VALUES ($1, $2, $3);",
         user_id,
-        Event::StartTextli as Event,
+        TransactionEvent::StartTextli as TransactionEvent,
         time,
     )
     .execute(db)

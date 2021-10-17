@@ -1,4 +1,4 @@
-use crate::users::{get_user_info, DAILY_BALANCE_COST};
+use crate::users::{get_user_info, BALANCE_SCALE_FACTOR, DAILY_BALANCE_COST};
 use log::info;
 use serde::Serialize;
 use sqlx::PgPool;
@@ -22,7 +22,7 @@ pub async fn user_info_handler(
     let remaining_days = user_info.balance as f64 / DAILY_BALANCE_COST as f64;
 
     Ok(warp::reply::json(&UserInfoResponse {
-        balance: user_info.balance as f64 / 1_000_000.0,
+        balance: user_info.balance as f64 / BALANCE_SCALE_FACTOR as f64,
         remaining_days,
         salt: user_info.salt,
     }))

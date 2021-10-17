@@ -7,6 +7,7 @@ mod salt;
 mod signup;
 
 pub use change_password::change_password_handler;
+use chrono::Utc;
 pub use delete_user::delete_user_handler;
 pub use info::user_info_handler;
 pub use login::login_handler;
@@ -21,9 +22,9 @@ use serde::Deserialize;
 use sqlx::{query, PgPool};
 
 /// Balance is stored as CHF * 10^6 to avoid significant rounding errors
+pub const BALANCE_SCALE_FACTOR: i64 = 1_000_000;
 
 /// Default starting balance for new users
-/// 1.0 CHF = 1'000'000
 pub const DEFAULT_BALANCE: i64 = 1_000_000;
 
 /// Once balance falls below this threshold,
@@ -31,7 +32,8 @@ pub const DEFAULT_BALANCE: i64 = 1_000_000;
 pub const FUNDED_BALANCE: i64 = -500_000;
 
 /// Cost per day calculated as: CHF 1 / Month = CHF 12 / Year
-/// CHF 12 / 365 days per year = CHF 0.032876 / Day
+/// CHF 12 / 365 days per year = CHF 0.032876 / Day = CHF 0.0013698 / Hour
+pub const HOURLY_BALANCE_COST: i64 = 1_369;
 pub const DAILY_BALANCE_COST: i64 = 32_876;
 
 /// Cost of bcrypt hashing algorithm
@@ -49,6 +51,14 @@ pub struct UserInfo {
     salt: Option<String>,
 }
 
+#[derive(sqlx::Type, Debug)]
+#[sqlx(type_name = "event", rename_all = "lowercase")]
+enum TransactionEvent {
+    StartTextli,
+    PauseTextli,
+    AddFunds,
+}
+
 pub async fn is_funded(user_id: i32, db: PgPool) -> Result<(), warp::Rejection> {
     let user_info = get_user_info(user_id, &db).await?;
 
@@ -60,21 +70,70 @@ pub async fn is_funded(user_id: i32, db: PgPool) -> Result<(), warp::Rejection> 
 }
 
 async fn get_user_info(user_id: i32, db: &PgPool) -> Result<UserInfo, ApiError> {
-    match query!(
-        "SELECT balance, salt
+    let salt = query!(
+        "SELECT salt
         FROM users 
         WHERE id = $1;",
         user_id,
     )
     .fetch_one(db)
-    .await
-    {
-        Ok(row) => Ok(UserInfo {
-            balance: row.balance,
-            salt: row.salt,
-        }),
-        Err(error) => Err(ApiError::DBError(error)),
+    .await?;
+
+    let transactions = query!(
+        r#"SELECT event AS "event!: TransactionEvent", amount, date
+        FROM transactions
+        WHERE user_id = $1
+        ORDER BY date;"#,
+        user_id,
+    )
+    .fetch_all(db)
+    .await?;
+
+    let mut credit = 0;
+    let mut debit = 0;
+
+    let mut start_date = None;
+
+    for transaction in transactions {
+        if matches!(transaction.event, TransactionEvent::AddFunds) {
+            credit += transaction.amount.unwrap();
+        }
+
+        if matches!(transaction.event, TransactionEvent::StartTextli) {
+            if start_date.is_some() {
+                return Err(ApiError::ViolatedAssertion("Transactions corrupted".into()));
+            }
+            start_date = Some(transaction.date);
+        }
+
+        if matches!(transaction.event, TransactionEvent::PauseTextli) {
+            if start_date.is_none() {
+                return Err(ApiError::ViolatedAssertion("Transactions corrupted".into()));
+            }
+            let duration = transaction.date - start_date.unwrap();
+            let hours = duration.num_hours();
+
+            let cost = hours * HOURLY_BALANCE_COST;
+            debit += cost;
+
+            start_date = None;
+        }
     }
+
+    if start_date.is_some() {
+        let duration = Utc::now() - start_date.unwrap();
+        let hours = duration.num_hours();
+
+        let cost = hours * HOURLY_BALANCE_COST;
+        debit += cost;
+    }
+
+    let balance = DEFAULT_BALANCE + credit - debit;
+
+    Ok(UserInfo {
+        balance,
+        salt: salt.salt,
+    })
 }
 
 async fn user_exists(name: &str, db: &PgPool) -> Result<bool, ApiError> {

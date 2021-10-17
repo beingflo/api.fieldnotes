@@ -6,7 +6,7 @@ CREATE TABLE transactions
   id SERIAL PRIMARY KEY,
   user_id integer NOT NULL REFERENCES users(id),
   event event NOT NULL,
-  amount integer,
+  amount BIGINT,
   date TIMESTAMPTZ NOT NULL
 );
 

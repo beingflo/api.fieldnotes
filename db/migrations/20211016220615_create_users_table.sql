@@ -7,8 +7,7 @@ CREATE TABLE users
   email text,
   salt text,
   created_at TIMESTAMPTZ NOT NULL,
-  deleted_at TIMESTAMPTZ,
-  balance BIGINT NOT NULL
+  deleted_at TIMESTAMPTZ
 );
 
 -- migrate:down
