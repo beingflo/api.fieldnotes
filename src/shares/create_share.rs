@@ -76,14 +76,15 @@ async fn create_share(
     db: &PgPool,
 ) -> Result<(), ApiError> {
     let row = query!(
-        "INSERT INTO shares (token, note_id, user_id, created_at, expires_at, public)
-        SELECT $1, id, $3, $4, $5, $6
+        "INSERT INTO shares (token, note_id, user_id, created_at, expires_at, view_count, public)
+        SELECT $1, id, $3, $4, $5, $6, $7
         FROM notes WHERE token = $2 AND user_id = $3 AND deleted_at IS NULL",
         token,
         note,
         user_id,
         created_at,
         expires_at,
+        0,
         *public,
     )
     .execute(db)

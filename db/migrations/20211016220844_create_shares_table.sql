@@ -7,6 +7,7 @@ CREATE TABLE shares
   user_id integer NOT NULL REFERENCES users(id),
   created_at TIMESTAMPTZ NOT NULL,
   expires_at TIMESTAMPTZ,
+  view_count integer NOT NULL,
   public text
 );
 

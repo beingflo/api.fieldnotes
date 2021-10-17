@@ -36,6 +36,15 @@ pub async fn access_share_handler(
 }
 
 async fn access_share(token: &str, db: &PgPool) -> Result<AccessShareResponse, ApiError> {
+    query!(
+        "UPDATE shares
+        SET view_count = view_count + 1
+        WHERE shares.token = $1;",
+        token
+    )
+    .execute(db)
+    .await?;
+
     match query!(
         "SELECT notes.created_at, notes.modified_at, notes.content, notes.key 
         FROM shares 
