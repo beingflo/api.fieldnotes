@@ -15,6 +15,14 @@ pub struct SignupCredentials {
     email: Option<String>,
 }
 
+#[derive(sqlx::Type)]
+#[sqlx(type_name = "event", rename_all = "lowercase")]
+enum Event {
+    StartTextli,
+    PauseTextli,
+    AddFunds,
+}
+
 /// Sign up new user. This stores the user data in the db.
 pub async fn signup_handler(
     user: SignupCredentials,
@@ -49,28 +57,30 @@ async fn store_user(
     time: DateTime<Utc>,
     db: &PgPool,
 ) -> Result<(), ApiError> {
-    let query_result = query!(
+    let result = query!(
         "INSERT INTO users (username, password, email, created_at, balance)
-        VALUES ($1, $2, $3, $4, $5);",
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id;",
         name,
         password_hash,
         email,
         time,
         DEFAULT_BALANCE
     )
-    .execute(db)
-    .await;
+    .fetch_one(db)
+    .await?;
 
-    match query_result {
-        Ok(result) => {
-            if result.rows_affected() == 1 {
-                Ok(())
-            } else {
-                Err(ApiError::ViolatedAssertion(
-                    "Multiple rows affected in user creation".to_string(),
-                ))
-            }
-        }
-        Err(error) => Err(ApiError::DBError(error)),
-    }
+    let user_id = result.id;
+
+    query!(
+        "INSERT INTO transactions (user_id, event, date)
+        VALUES ($1, $2, $3);",
+        user_id,
+        Event::StartTextli as Event,
+        time,
+    )
+    .execute(db)
+    .await?;
+
+    Ok(())
 }

@@ -11,7 +11,7 @@ mod util;
 use dotenv::dotenv;
 use error::handle_rejection;
 use log::info;
-use schedule::{balance_decrease_schedule, notes_deletion_schedule, tokens_deletion_schedule};
+use schedule::{notes_deletion_schedule, tokens_deletion_schedule};
 use sqlx::postgres::PgPoolOptions;
 use std::net::SocketAddr;
 use warp::Filter;
@@ -225,7 +225,6 @@ async fn main() {
             .with(cors),
         )
         .run(listen),
-        balance_decrease_schedule(pool.clone()),
         notes_deletion_schedule(pool.clone()),
         tokens_deletion_schedule(pool.clone())
     );
