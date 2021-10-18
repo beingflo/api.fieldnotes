@@ -104,7 +104,8 @@ async fn main() {
         .and(warp::path("session"))
         .and(warp::body::json())
         .and(with_db.clone())
-        .and_then(users::login_handler);
+        .then(users::login_handler)
+        .and_then(error::error_mapping);
 
     let user_info = warp::get()
         .and(warp::path!("user" / "info"))
@@ -120,6 +121,14 @@ async fn main() {
         .and(warp::body::json())
         .and(with_db.clone())
         .and_then(users::store_salt_handler);
+
+    let user_api = login
+        .or(signup)
+        .or(logout)
+        .or(change_password)
+        .or(store_salt)
+        .or(delete_user)
+        .or(user_info);
 
     let list_notes = warp::get()
         .and(warp::path("notes"))
@@ -168,6 +177,13 @@ async fn main() {
         .and(with_db.clone())
         .and_then(notes::undelete_note_handler);
 
+    let note_api = get_note
+        .or(list_notes)
+        .or(save_note)
+        .or(update_note)
+        .or(delete_note)
+        .or(undelete_note);
+
     let create_share = warp::post()
         .and(warp::path("shares"))
         .and(warp::path::end())
@@ -184,13 +200,6 @@ async fn main() {
         .and(with_db.clone())
         .and_then(shares::list_shares_handler);
 
-    // Non-authorized access allowed here
-    let list_publications = warp::get()
-        .and(warp::path!("publications" / String))
-        .and(warp::path::end())
-        .and(with_db.clone())
-        .and_then(shares::list_publications_handler);
-
     let delete_share = warp::delete()
         .and(warp::path!("shares" / String))
         .and(warp::path::end())
@@ -204,6 +213,18 @@ async fn main() {
         .and(warp::path::end())
         .and(with_db.clone())
         .and_then(shares::access_share_handler);
+
+    let share_api = create_share
+        .or(delete_share)
+        .or(list_shares)
+        .or(access_share);
+
+    // Non-authorized access allowed here
+    let list_publications = warp::get()
+        .and(warp::path!("publications" / String))
+        .and(warp::path::end())
+        .and(with_db.clone())
+        .and_then(shares::list_publications_handler);
 
     let cors = warp::cors()
         .allow_origins([
@@ -226,28 +247,9 @@ async fn main() {
 
     tokio::join!(
         warp::serve(
-            combine!(
-                signup,
-                login,
-                logout,
-                delete_user,
-                user_info,
-                store_salt,
-                change_password,
-                list_notes,
-                get_note,
-                save_note,
-                update_note,
-                delete_note,
-                undelete_note,
-                create_share,
-                delete_share,
-                access_share,
-                list_shares,
-                list_publications
-            )
-            .recover(handle_rejection)
-            .with(cors),
+            combine!(user_api, note_api, share_api, list_publications)
+                .recover(handle_rejection)
+                .with(cors),
         )
         .run(listen),
         notes_deletion_schedule(pool.clone()),

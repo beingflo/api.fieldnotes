@@ -2,6 +2,7 @@ use log::{error, warn};
 use thiserror::Error;
 use warp::http::StatusCode;
 use warp::reject::{InvalidHeader, MissingCookie};
+use warp::reply::Response;
 use warp::{Rejection, Reply};
 
 #[derive(Error, Debug)]
@@ -24,6 +25,28 @@ pub enum ApiError {
 
 impl warp::reject::Reject for ApiError {}
 
+impl warp::reply::Reply for ApiError {
+    fn into_response(self) -> Response {
+        match self {
+            ApiError::DBError(_db_error) => {
+                return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+            }
+            ApiError::ViolatedAssertion(_assertion) => {
+                return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+            }
+            ApiError::Unauthorized => {
+                return StatusCode::UNAUTHORIZED.into_response();
+            }
+            ApiError::Underfunded => {
+                return StatusCode::PAYMENT_REQUIRED.into_response();
+            }
+            ApiError::Conflict => {
+                return StatusCode::CONFLICT.into_response();
+            }
+        }
+    }
+}
+
 /// Turn rejections into appropriate status codes
 pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
     if err.find::<MissingCookie>().is_some() {
@@ -36,6 +59,7 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
         return Ok(StatusCode::UNAUTHORIZED);
     }
 
+    // TODO remove once all endpoints use new error handling
     if let Some(custom_error) = err.find::<ApiError>() {
         match custom_error {
             ApiError::DBError(_db_error) => {
@@ -57,4 +81,13 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
     }
 
     Err(err)
+}
+
+pub async fn error_mapping<T: Reply, E: Reply>(
+    res: Result<T, E>,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    match res {
+        Ok(r) => Ok(r.into_response()),
+        Err(e) => Ok(e.into_response()),
+    }
 }

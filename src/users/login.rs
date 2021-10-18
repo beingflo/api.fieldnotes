@@ -1,4 +1,5 @@
 use crate::authentication::{store_auth_token, TOKEN_EXPIRATION_WEEKS};
+use crate::error::ApiError;
 use crate::users::{get_password, user_exists_and_is_active, verify_password, UserCredentials};
 use crate::util::{get_auth_token, get_cookie_headers};
 use chrono::{Duration, Utc};
@@ -8,7 +9,10 @@ use warp::http::StatusCode;
 use warp::Reply;
 
 /// Log in existing user, this sets username and token cookies for future requests.
-pub async fn login_handler(user: UserCredentials, db: PgPool) -> Result<impl warp::Reply, warp::Rejection> {
+pub async fn login_handler(
+    user: UserCredentials,
+    db: PgPool,
+) -> Result<impl warp::Reply, ApiError> {
     info!("Login user {}", user.name);
 
     if !user_exists_and_is_active(&user.name, &db).await? {
