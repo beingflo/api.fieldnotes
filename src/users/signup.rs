@@ -19,7 +19,7 @@ pub struct SignupCredentials {
 pub async fn signup_handler(
     user: SignupCredentials,
     db: PgPool,
-) -> Result<impl warp::Reply, warp::Rejection> {
+) -> Result<impl warp::Reply, ApiError> {
     info!("Creating user {}", user.name);
 
     if user_exists(&user.name, &db).await? {

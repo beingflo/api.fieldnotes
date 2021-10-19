@@ -19,7 +19,7 @@ pub async fn change_password_handler(
     credentials: PasswordChangeRequest,
     user_id: i32,
     db: PgPool,
-) -> Result<impl warp::Reply, warp::Rejection> {
+) -> Result<impl warp::Reply, ApiError> {
     info!("Change password for user {}", user_id);
 
     if !user_exists_and_matches_id(&credentials.name, user_id, &db).await? {

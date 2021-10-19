@@ -1,4 +1,5 @@
 use crate::authentication::delete_auth_token;
+use crate::error::ApiError;
 use crate::util::get_cookie_headers;
 use chrono::Duration;
 use log::info;
@@ -9,7 +10,7 @@ pub async fn logout_handler(
     user_id: i32,
     token: String,
     db: PgPool,
-) -> Result<impl warp::Reply, warp::Rejection> {
+) -> Result<impl warp::Reply, ApiError> {
     info!("Log out user {}", user_id);
 
     delete_auth_token(&token, &db).await?;

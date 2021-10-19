@@ -83,7 +83,7 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
     Err(err)
 }
 
-pub async fn error_mapping<T: Reply, E: Reply>(
+pub async fn handle_errors<T: Reply, E: Reply>(
     res: Result<T, E>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     match res {

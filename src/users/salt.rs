@@ -15,7 +15,7 @@ pub async fn store_salt_handler(
     user_id: i32,
     salt: UserSaltRequest,
     db: PgPool,
-) -> Result<impl warp::Reply, warp::Rejection> {
+) -> Result<impl warp::Reply, ApiError> {
     info!("Store salt for user {}", user_id);
 
     store_salt(user_id, &salt.salt, &db).await?;
