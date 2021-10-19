@@ -16,10 +16,7 @@ pub struct ListShareResponse {
 }
 
 /// List existing shares
-pub async fn list_shares_handler(
-    user_id: i32,
-    db: PgPool,
-) -> Result<impl warp::Reply, warp::Rejection> {
+pub async fn list_shares_handler(user_id: i32, db: PgPool) -> Result<impl warp::Reply, ApiError> {
     info!("Listing shares for user {}", user_id);
 
     let shares = list_shares(user_id, &db).await?;

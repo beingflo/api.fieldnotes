@@ -7,7 +7,7 @@ pub async fn delete_share_handler(
     token: String,
     user_id: i32,
     db: PgPool,
-) -> Result<impl warp::Reply, warp::Rejection> {
+) -> Result<impl warp::Reply, ApiError> {
     info!("Deleting share for user {}", user_id);
 
     delete_share(user_id, &token, &db).await?;

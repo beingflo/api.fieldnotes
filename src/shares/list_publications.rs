@@ -20,7 +20,7 @@ pub struct ListPublicationResponse {
 pub async fn list_publications_handler(
     username: String,
     db: PgPool,
-) -> Result<impl warp::Reply, warp::Rejection> {
+) -> Result<impl warp::Reply, ApiError> {
     info!("Listing publications for user {}", username);
 
     let shares = list_publications(username, &db).await?;

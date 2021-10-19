@@ -13,10 +13,7 @@ pub struct AccessShareResponse {
     key: String,
 }
 
-pub async fn access_share_handler(
-    token: String,
-    db: PgPool,
-) -> Result<impl warp::Reply, warp::Rejection> {
+pub async fn access_share_handler(token: String, db: PgPool) -> Result<impl warp::Reply, ApiError> {
     info!("Accessing share");
     let expires_at = get_share_expiration(&token, &db).await?;
 
@@ -26,7 +23,7 @@ pub async fn access_share_handler(
         if expires < now {
             warn!("Share expired {}", token);
 
-            return Err(warp::reject::custom(ApiError::Unauthorized));
+            return Err(ApiError::Unauthorized);
         }
     }
 

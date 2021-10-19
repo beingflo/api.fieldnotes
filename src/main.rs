@@ -9,7 +9,6 @@ mod users;
 mod util;
 
 use dotenv::dotenv;
-use error::handle_rejection;
 use log::{info, LevelFilter};
 use schedule::{notes_deletion_schedule, tokens_deletion_schedule};
 use simplelog::{
@@ -19,6 +18,8 @@ use sqlx::postgres::PgPoolOptions;
 use std::{fs::File, net::SocketAddr};
 use warp::Filter;
 
+use crate::error::handle_rejection;
+
 #[tokio::main]
 async fn main() {
     CombinedLogger::init(vec![
@@ -26,6 +27,7 @@ async fn main() {
             LevelFilter::Info,
             ConfigBuilder::new()
                 .add_filter_allow_str("textli")
+                .add_filter_allow_str("warp")
                 .set_time_format_str("%F %T")
                 .set_time_to_local(true)
                 .build(),
@@ -36,6 +38,7 @@ async fn main() {
             LevelFilter::Info,
             ConfigBuilder::new()
                 .add_filter_allow_str("textli")
+                .add_filter_allow_str("warp")
                 .set_time_format_str("%F %T")
                 .set_time_to_local(true)
                 .build(),
@@ -203,28 +206,32 @@ async fn main() {
         .and(is_funded.clone())
         .and(warp::body::json())
         .and(with_db.clone())
-        .and_then(shares::create_share_handler);
+        .then(shares::create_share_handler)
+        .and_then(error::handle_errors);
 
     let list_shares = warp::get()
         .and(warp::path("shares"))
         .and(warp::path::end())
         .and(is_authorized_with_user.clone())
         .and(with_db.clone())
-        .and_then(shares::list_shares_handler);
+        .then(shares::list_shares_handler)
+        .and_then(error::handle_errors);
 
     let delete_share = warp::delete()
         .and(warp::path!("shares" / String))
         .and(warp::path::end())
         .and(is_authorized_with_user.clone())
         .and(with_db.clone())
-        .and_then(shares::delete_share_handler);
+        .then(shares::delete_share_handler)
+        .and_then(error::handle_errors);
 
     // Non-authorized access allowed here
     let access_share = warp::get()
         .and(warp::path!("shares" / String))
         .and(warp::path::end())
         .and(with_db.clone())
-        .and_then(shares::access_share_handler);
+        .then(shares::access_share_handler)
+        .and_then(error::handle_errors);
 
     let share_api = create_share
         .or(delete_share)
@@ -236,7 +243,8 @@ async fn main() {
         .and(warp::path!("publications" / String))
         .and(warp::path::end())
         .and(with_db.clone())
-        .and_then(shares::list_publications_handler);
+        .then(shares::list_publications_handler)
+        .and_then(error::handle_errors);
 
     let cors = warp::cors()
         .allow_origins([

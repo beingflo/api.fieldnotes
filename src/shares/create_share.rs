@@ -28,7 +28,7 @@ pub async fn create_share_handler(
     user_id: i32,
     request: CreateShareRequest,
     db: PgPool,
-) -> Result<impl warp::Reply, warp::Rejection> {
+) -> Result<impl warp::Reply, ApiError> {
     info!("Creating share for user {}", user_id);
 
     let now = Utc::now();
