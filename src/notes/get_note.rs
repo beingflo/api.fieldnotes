@@ -20,7 +20,7 @@ pub async fn get_note_handler(
     token: String,
     user_id: i32,
     db: PgPool,
-) -> Result<impl warp::Reply, warp::Rejection> {
+) -> Result<impl warp::Reply, ApiError> {
     info!("Get note for user {}", user_id);
 
     let note: GetNoteResponse = get_note(user_id, &token, &db).await?;

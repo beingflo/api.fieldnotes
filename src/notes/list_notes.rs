@@ -32,7 +32,7 @@ pub async fn list_notes_handler(
     queries: HashMap<String, String>,
     user_id: i32,
     db: PgPool,
-) -> Result<impl warp::Reply, warp::Rejection> {
+) -> Result<impl warp::Reply, ApiError> {
     if queries.get("deleted").is_some() {
         info!("Listing deleted notes for user {}", user_id);
 

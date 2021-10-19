@@ -20,7 +20,7 @@ pub async fn undelete_note_handler(
     token: String,
     user_id: i32,
     db: PgPool,
-) -> Result<impl warp::Reply, warp::Rejection> {
+) -> Result<impl warp::Reply, ApiError> {
     info!("Undeleting note for user {}", user_id);
 
     let note: UndeleteNoteResponse = undelete_note(user_id, &token, &db).await?;

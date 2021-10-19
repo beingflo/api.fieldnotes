@@ -25,7 +25,7 @@ pub async fn update_note_handler(
     user_id: i32,
     note: UpdateNoteRequest,
     db: PgPool,
-) -> Result<impl warp::Reply, warp::Rejection> {
+) -> Result<impl warp::Reply, ApiError> {
     info!("Updating note for user {}", user_id);
 
     let now = Utc::now();

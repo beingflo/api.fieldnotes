@@ -26,7 +26,7 @@ pub async fn save_note_handler(
     user_id: i32,
     note: SaveNoteRequest,
     db: PgPool,
-) -> Result<impl warp::Reply, warp::Rejection> {
+) -> Result<impl warp::Reply, ApiError> {
     info!("Saving note for user {}", user_id);
 
     let now = Utc::now();

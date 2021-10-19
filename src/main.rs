@@ -142,14 +142,16 @@ async fn main() {
         .and(warp::query::query())
         .and(is_authorized_with_user.clone())
         .and(with_db.clone())
-        .and_then(notes::list_notes_handler);
+        .then(notes::list_notes_handler)
+        .and_then(error::handle_errors);
 
     let get_note = warp::get()
         .and(warp::path!("notes" / String))
         .and(warp::path::end())
         .and(is_authorized_with_user.clone())
         .and(with_db.clone())
-        .and_then(notes::get_note_handler);
+        .then(notes::get_note_handler)
+        .and_then(error::handle_errors);
 
     let save_note = warp::post()
         .and(warp::path("notes"))
@@ -158,7 +160,8 @@ async fn main() {
         .and(is_funded.clone())
         .and(warp::body::json())
         .and(with_db.clone())
-        .and_then(notes::save_note_handler);
+        .then(notes::save_note_handler)
+        .and_then(error::handle_errors);
 
     let update_note = warp::put()
         .and(warp::path!("notes" / String))
@@ -167,21 +170,24 @@ async fn main() {
         .and(is_funded.clone())
         .and(warp::body::json())
         .and(with_db.clone())
-        .and_then(notes::update_note_handler);
+        .then(notes::update_note_handler)
+        .and_then(error::handle_errors);
 
     let delete_note = warp::delete()
         .and(warp::path!("notes" / String))
         .and(warp::path::end())
         .and(is_authorized_with_user.clone())
         .and(with_db.clone())
-        .and_then(notes::delete_note_handler);
+        .then(notes::delete_note_handler)
+        .and_then(error::handle_errors);
 
     let undelete_note = warp::get()
         .and(warp::path!("notes" / "undelete" / String))
         .and(warp::path::end())
         .and(is_authorized_with_user.clone())
         .and(with_db.clone())
-        .and_then(notes::undelete_note_handler);
+        .then(notes::undelete_note_handler)
+        .and_then(error::handle_errors);
 
     let note_api = get_note
         .or(list_notes)
