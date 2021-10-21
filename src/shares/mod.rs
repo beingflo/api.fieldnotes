@@ -12,7 +12,6 @@ pub use list_shares::list_shares_handler;
 
 use crate::error::ApiError;
 use chrono::{DateTime, Utc};
-use log::warn;
 use sqlx::{query, PgPool};
 
 async fn get_share_expiration(token: &str, db: &PgPool) -> Result<Option<DateTime<Utc>>, ApiError> {
@@ -26,9 +25,6 @@ async fn get_share_expiration(token: &str, db: &PgPool) -> Result<Option<DateTim
     .await?
     {
         Some(row) => Ok(row.expires_at),
-        None => {
-            warn!("Invalid share token {}", token);
-            Err(ApiError::Unauthorized)
-        }
+        None => Err(ApiError::Unauthorized),
     }
 }

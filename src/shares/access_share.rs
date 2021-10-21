@@ -1,6 +1,5 @@
 use crate::{error::ApiError, shares::get_share_expiration};
 use chrono::{DateTime, Utc};
-use log::warn;
 use serde::Serialize;
 use sqlx::{query, PgPool};
 
@@ -20,8 +19,6 @@ pub async fn access_share_handler(token: String, db: PgPool) -> Result<impl warp
 
     if let Some(expires) = expires_at {
         if expires < now {
-            warn!("Share expired {}", token);
-
             return Err(ApiError::Unauthorized);
         }
     }
@@ -57,9 +54,6 @@ async fn access_share(token: &str, db: &PgPool) -> Result<AccessShareResponse, A
             content: row.content,
             key: row.key,
         }),
-        None => {
-            warn!("Invalid share token {}", token);
-            Err(ApiError::Unauthorized)
-        }
+        None => Err(ApiError::Unauthorized),
     }
 }

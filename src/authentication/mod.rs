@@ -1,6 +1,5 @@
 use crate::error::ApiError;
 use chrono::{DateTime, Duration, Utc};
-use log::warn;
 use sqlx::{query, PgPool};
 use warp::reject;
 
@@ -37,10 +36,7 @@ async fn get_auth_token_info(
     .map_err(|e| reject::custom(ApiError::DBError(e)))?
     {
         Some(tok) => Ok((tok.user_id, tok.created_at)),
-        None => {
-            warn!("Invalid token {}", token);
-            Err(warp::reject::custom(ApiError::Unauthorized))
-        }
+        None => Err(warp::reject::custom(ApiError::Unauthorized)),
     }
 }
 

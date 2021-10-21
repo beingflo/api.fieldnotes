@@ -1,4 +1,4 @@
-use log::{error, warn};
+use log::error;
 use thiserror::Error;
 use warp::http::StatusCode;
 use warp::reject::{InvalidHeader, MissingCookie};
@@ -50,12 +50,10 @@ impl warp::reply::Reply for ApiError {
 /// Turn rejections into appropriate status codes
 pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
     if err.find::<MissingCookie>().is_some() {
-        warn!("Missing cookie");
         return Ok(StatusCode::UNAUTHORIZED);
     }
 
     if err.find::<InvalidHeader>().is_some() {
-        warn!("Invalid header");
         return Ok(StatusCode::UNAUTHORIZED);
     }
 
