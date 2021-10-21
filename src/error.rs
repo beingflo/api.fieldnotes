@@ -59,6 +59,26 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
         return Ok(StatusCode::UNAUTHORIZED);
     }
 
+    if let Some(custom_error) = err.find::<ApiError>() {
+        match custom_error {
+            ApiError::DBError(_db_error) => {
+                return Ok(StatusCode::INTERNAL_SERVER_ERROR);
+            }
+            ApiError::ViolatedAssertion(_assertion) => {
+                return Ok(StatusCode::INTERNAL_SERVER_ERROR);
+            }
+            ApiError::Unauthorized => {
+                return Ok(StatusCode::UNAUTHORIZED);
+            }
+            ApiError::Underfunded => {
+                return Ok(StatusCode::PAYMENT_REQUIRED);
+            }
+            ApiError::Conflict => {
+                return Ok(StatusCode::CONFLICT);
+            }
+        }
+    }
+
     Err(err)
 }
 
