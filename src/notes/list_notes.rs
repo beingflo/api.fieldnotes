@@ -1,6 +1,5 @@
 use crate::error::ApiError;
 use chrono::{DateTime, Utc};
-use log::info;
 use serde::Serialize;
 use sqlx::{query, PgPool};
 use std::collections::HashMap;
@@ -34,14 +33,10 @@ pub async fn list_notes_handler(
     db: PgPool,
 ) -> Result<impl warp::Reply, ApiError> {
     if queries.get("deleted").is_some() {
-        info!("Listing deleted notes for user {}", user_id);
-
         let notes = list_deleted_notes(user_id, &db).await?;
 
         Ok(warp::reply::json(&notes))
     } else {
-        info!("Listing notes for user {}", user_id);
-
         let notes = list_notes(user_id, &db).await?;
 
         Ok(warp::reply::json(&notes))

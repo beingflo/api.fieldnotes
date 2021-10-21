@@ -1,7 +1,7 @@
 use crate::error::ApiError;
 use crate::users::{get_password, user_exists_and_matches_id, verify_password, UserCredentials};
 use chrono::Utc;
-use log::{info, warn};
+use log::warn;
 use sqlx::{query, PgPool};
 use warp::http::StatusCode;
 
@@ -11,8 +11,6 @@ pub async fn delete_user_handler(
     user_id: i32,
     db: PgPool,
 ) -> Result<impl warp::Reply, ApiError> {
-    info!("Deleting user {}", credentials.name);
-
     if !user_exists_and_matches_id(&credentials.name, user_id, &db).await? {
         warn!(
             "User {} doesn't exists or doesn't match auth token",
@@ -23,7 +21,7 @@ pub async fn delete_user_handler(
 
     let password = get_password(&credentials.name, &db).await?;
 
-    match verify_password(&credentials.name, &credentials.password, &password).await? {
+    match verify_password(&credentials.password, &password).await? {
         false => return Ok(StatusCode::UNAUTHORIZED),
         true => (),
     }

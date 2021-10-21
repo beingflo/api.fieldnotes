@@ -17,7 +17,7 @@ pub use signup::signup_handler;
 
 use crate::error::ApiError;
 use bcrypt::verify;
-use log::{error, info, warn};
+use log::error;
 use serde::Deserialize;
 use sqlx::{query, PgPool};
 
@@ -155,7 +155,6 @@ async fn user_exists(name: &str, db: &PgPool) -> Result<bool, ApiError> {
             if let Some(0) = row.count {
                 Ok(false)
             } else {
-                info!("User already exists");
                 Ok(true)
             }
         }
@@ -178,7 +177,6 @@ async fn user_exists_and_is_active(name: &str, db: &PgPool) -> Result<bool, ApiE
             if let Some(0) = row.count {
                 Ok(false)
             } else {
-                info!("User already exists");
                 Ok(true)
             }
         }
@@ -226,7 +224,7 @@ pub async fn get_password(name: &str, db: &PgPool) -> Result<String, ApiError> {
 }
 
 /// Verify supplied password for user.
-async fn verify_password(name: &str, password: &str, hash: &str) -> Result<bool, ApiError> {
+async fn verify_password(password: &str, hash: &str) -> Result<bool, ApiError> {
     match verify(password, hash) {
         Err(err) => {
             error!("Error while verifying password: {:?}", err);
@@ -234,13 +232,7 @@ async fn verify_password(name: &str, password: &str, hash: &str) -> Result<bool,
                 "brcypt verify error".to_string(),
             ))
         }
-        Ok(false) => {
-            warn!("User {} supplied wrong password", name);
-            Ok(false)
-        }
-        Ok(true) => {
-            info!("User {} supplied correct password", name);
-            Ok(true)
-        }
+        Ok(false) => Ok(false),
+        Ok(true) => Ok(true),
     }
 }

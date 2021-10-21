@@ -3,7 +3,7 @@ use crate::error::ApiError;
 use crate::users::{get_password, user_exists_and_is_active, verify_password, UserCredentials};
 use crate::util::{get_auth_token, get_cookie_headers};
 use chrono::{Duration, Utc};
-use log::{info, warn};
+use log::warn;
 use sqlx::PgPool;
 use warp::http::StatusCode;
 use warp::Reply;
@@ -13,8 +13,6 @@ pub async fn login_handler(
     user: UserCredentials,
     db: PgPool,
 ) -> Result<impl warp::Reply, ApiError> {
-    info!("Login user {}", user.name);
-
     if !user_exists_and_is_active(&user.name, &db).await? {
         warn!("User {} doesn't exists", user.name);
         return Ok(StatusCode::UNAUTHORIZED.into_response());
@@ -22,7 +20,7 @@ pub async fn login_handler(
 
     let password = get_password(&user.name, &db).await?;
 
-    match verify_password(&user.name, &user.password, &password).await? {
+    match verify_password(&user.password, &password).await? {
         false => return Ok(StatusCode::UNAUTHORIZED.into_response()),
         true => (),
     }

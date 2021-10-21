@@ -1,6 +1,6 @@
 use crate::{error::ApiError, shares::get_share_expiration};
 use chrono::{DateTime, Utc};
-use log::{info, warn};
+use log::warn;
 use serde::Serialize;
 use sqlx::{query, PgPool};
 
@@ -14,7 +14,6 @@ pub struct AccessShareResponse {
 }
 
 pub async fn access_share_handler(token: String, db: PgPool) -> Result<impl warp::Reply, ApiError> {
-    info!("Accessing share");
     let expires_at = get_share_expiration(&token, &db).await?;
 
     let now = Utc::now();

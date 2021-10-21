@@ -1,6 +1,5 @@
 use crate::error::ApiError;
 use chrono::{DateTime, Utc};
-use log::info;
 use sqlx::{query, PgPool};
 use warp::http::StatusCode;
 
@@ -10,8 +9,6 @@ pub async fn delete_note_handler(
     user_id: i32,
     db: PgPool,
 ) -> Result<impl warp::Reply, ApiError> {
-    info!("Deleting note for user {}", user_id);
-
     let now = Utc::now();
 
     delete_note(user_id, &token, now, &db).await?;

@@ -1,7 +1,6 @@
 use crate::error::ApiError;
 use crate::util::get_note_token;
 use chrono::{DateTime, Utc};
-use log::info;
 use serde::{Deserialize, Serialize};
 use sqlx::{query, PgPool};
 
@@ -27,8 +26,6 @@ pub async fn save_note_handler(
     note: SaveNoteRequest,
     db: PgPool,
 ) -> Result<impl warp::Reply, ApiError> {
-    info!("Saving note for user {}", user_id);
-
     let now = Utc::now();
     let token = get_note_token();
 

@@ -47,7 +47,7 @@ async fn main() {
     ])
     .unwrap();
 
-    info!("Textli started");
+    info!("Server started");
 
     dotenv().ok();
 

@@ -33,7 +33,7 @@ async fn delete_expired_notes(db: &PgPool) {
     {
         Ok(result) => {
             info!(
-                "Deletion of expired notes with {} affected rows",
+                "Deletion of expired notes with {} affected items",
                 result.rows_affected()
             )
         }
@@ -72,7 +72,7 @@ async fn delete_expired_tokens(db: &PgPool) {
     {
         Ok(result) => {
             info!(
-                "Deletion of expired auth tokens with {} affected rows",
+                "Deletion of expired auth tokens with {} affected items",
                 result.rows_affected()
             )
         }

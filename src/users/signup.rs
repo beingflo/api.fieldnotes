@@ -2,7 +2,7 @@ use crate::error::ApiError;
 use crate::users::{user_exists, TransactionEvent, BCRYPT_COST};
 use bcrypt::hash;
 use chrono::{DateTime, Utc};
-use log::{info, warn};
+use log::warn;
 use serde::Deserialize;
 use sqlx::{query, PgPool};
 use warp::http::StatusCode;
@@ -20,8 +20,6 @@ pub async fn signup_handler(
     user: SignupCredentials,
     db: PgPool,
 ) -> Result<impl warp::Reply, ApiError> {
-    info!("Creating user {}", user.name);
-
     if user_exists(&user.name, &db).await? {
         warn!("User {} already exists", user.name);
         return Ok(StatusCode::CONFLICT);

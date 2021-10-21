@@ -1,6 +1,5 @@
 use crate::error::ApiError;
 use chrono::{DateTime, Utc};
-use log::info;
 use serde::Serialize;
 use sqlx::{query, PgPool};
 use tokio_stream::StreamExt;
@@ -21,8 +20,6 @@ pub async fn list_publications_handler(
     username: String,
     db: PgPool,
 ) -> Result<impl warp::Reply, ApiError> {
-    info!("Listing publications for user {}", username);
-
     let shares = list_publications(username, &db).await?;
 
     Ok(warp::reply::json(&shares))

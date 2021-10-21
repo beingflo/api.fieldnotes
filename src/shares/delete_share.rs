@@ -1,5 +1,4 @@
 use crate::error::ApiError;
-use log::info;
 use sqlx::{query, PgPool};
 use warp::http::StatusCode;
 
@@ -8,8 +7,6 @@ pub async fn delete_share_handler(
     user_id: i32,
     db: PgPool,
 ) -> Result<impl warp::Reply, ApiError> {
-    info!("Deleting share for user {}", user_id);
-
     delete_share(user_id, &token, &db).await?;
 
     Ok(StatusCode::OK)

@@ -1,6 +1,5 @@
 use crate::error::ApiError;
 use chrono::{DateTime, Utc};
-use log::info;
 use serde::Serialize;
 use sqlx::{query, PgPool};
 
@@ -21,8 +20,6 @@ pub async fn get_note_handler(
     user_id: i32,
     db: PgPool,
 ) -> Result<impl warp::Reply, ApiError> {
-    info!("Get note for user {}", user_id);
-
     let note: GetNoteResponse = get_note(user_id, &token, &db).await?;
 
     Ok(warp::reply::json(&note))

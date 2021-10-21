@@ -1,6 +1,5 @@
 use crate::error::ApiError;
 use chrono::{DateTime, Utc};
-use log::info;
 use serde::{Deserialize, Serialize};
 use sqlx::{query, PgPool};
 
@@ -26,8 +25,6 @@ pub async fn update_note_handler(
     note: UpdateNoteRequest,
     db: PgPool,
 ) -> Result<impl warp::Reply, ApiError> {
-    info!("Updating note for user {}", user_id);
-
     let now = Utc::now();
 
     let UpdateNoteRequest {

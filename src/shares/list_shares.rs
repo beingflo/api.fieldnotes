@@ -1,6 +1,5 @@
 use crate::error::ApiError;
 use chrono::{DateTime, Utc};
-use log::info;
 use serde::Serialize;
 use sqlx::{query, PgPool};
 use tokio_stream::StreamExt;
@@ -17,8 +16,6 @@ pub struct ListShareResponse {
 
 /// List existing shares
 pub async fn list_shares_handler(user_id: i32, db: PgPool) -> Result<impl warp::Reply, ApiError> {
-    info!("Listing shares for user {}", user_id);
-
     let shares = list_shares(user_id, &db).await?;
 
     Ok(warp::reply::json(&shares))

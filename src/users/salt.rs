@@ -1,5 +1,4 @@
 use crate::error::ApiError;
-use log::info;
 use serde::Deserialize;
 use sqlx::{query, PgPool};
 use warp::http::StatusCode;
@@ -16,8 +15,6 @@ pub async fn store_salt_handler(
     salt: UserSaltRequest,
     db: PgPool,
 ) -> Result<impl warp::Reply, ApiError> {
-    info!("Store salt for user {}", user_id);
-
     store_salt(user_id, &salt.salt, &db).await?;
 
     Ok(StatusCode::OK)

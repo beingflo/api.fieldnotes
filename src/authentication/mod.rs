@@ -1,6 +1,6 @@
 use crate::error::ApiError;
 use chrono::{DateTime, Duration, Utc};
-use log::{info, warn};
+use log::warn;
 use sqlx::{query, PgPool};
 use warp::reject;
 
@@ -15,10 +15,8 @@ pub async fn is_authorized_with_user(token: String, db: PgPool) -> Result<i32, w
     let now = Utc::now();
 
     if created_at + Duration::weeks(TOKEN_EXPIRATION_WEEKS) > now {
-        info!("Token valid for user {}", user_id);
         Ok(user_id)
     } else {
-        warn!("Token expired for user {}", user_id);
         Err(warp::reject::custom(ApiError::Unauthorized))
     }
 }
