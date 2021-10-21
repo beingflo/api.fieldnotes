@@ -1,6 +1,6 @@
 /// Helper to combine the multiple filters together with Filter::or, possibly boxing the types in
 /// the process. This greatly helps the build times.
-/// See https://github.com/seanmonstar/warp/issues/507 for reference
+/// See `<https://github.com/seanmonstar/warp/issues/507>` for reference
 macro_rules! combine {
     ($x:expr, $($y:expr),+) => {
         {
