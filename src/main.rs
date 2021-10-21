@@ -78,6 +78,7 @@ async fn main() {
 
     let signup = warp::post()
         .and(warp::path("user"))
+        .and(warp::path::end())
         .and(warp::body::json())
         .and(with_db.clone())
         .then(users::signup_handler)
@@ -85,6 +86,7 @@ async fn main() {
 
     let change_password = warp::put()
         .and(warp::path("user"))
+        .and(warp::path::end())
         .and(warp::body::json())
         .and(is_authorized_with_user.clone())
         .and(with_db.clone())
@@ -93,6 +95,7 @@ async fn main() {
 
     let logout = warp::delete()
         .and(warp::path("session"))
+        .and(warp::path::end())
         .and(is_authorized_with_user.clone())
         .and(with_token)
         .and(with_db.clone())
@@ -101,6 +104,7 @@ async fn main() {
 
     let delete_user = warp::delete()
         .and(warp::path("user"))
+        .and(warp::path::end())
         .and(warp::body::json())
         .and(is_authorized_with_user.clone())
         .and(with_db.clone())
@@ -109,6 +113,7 @@ async fn main() {
 
     let login = warp::post()
         .and(warp::path("session"))
+        .and(warp::path::end())
         .and(warp::body::json())
         .and(with_db.clone())
         .then(users::login_handler)
