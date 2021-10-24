@@ -54,3 +54,11 @@ pub fn get_cookie_headers(token: &str, expiration: Duration) -> Response<Body> {
 
     response.body(Body::empty()).unwrap()
 }
+
+pub fn trucate_auth_token(token: &str) -> String {
+    let length = token.len();
+    let beginning = &token[..6];
+    let end = &token[(length - 6)..];
+
+    return format!("{}..{}", beginning, end);
+}

@@ -60,6 +60,10 @@ async fn main() {
     let db_clone = pool.clone();
     let with_db = warp::any().map(move || db_clone.clone());
 
+    let log = warp::log::custom(|info| {
+        info!("{} {} {}", info.method(), info.path(), info.status(),);
+    });
+
     let with_token = warp::filters::cookie::cookie("token");
 
     let with_user = with_token
@@ -274,7 +278,8 @@ async fn main() {
         warp::serve(
             combine!(user_api, note_api, share_api, list_publications)
                 .recover(handle_rejection)
-                .with(cors),
+                .with(cors)
+                .with(log),
         )
         .run(listen),
         notes_deletion_schedule(pool.clone()),

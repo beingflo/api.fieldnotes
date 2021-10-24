@@ -1,5 +1,6 @@
-use crate::error::ApiError;
+use crate::{error::ApiError, util::trucate_auth_token};
 use chrono::{DateTime, Duration, Utc};
+use log::info;
 use sqlx::{query, PgPool};
 use warp::reject;
 
@@ -12,6 +13,8 @@ pub async fn is_authorized_with_user(token: String, db: PgPool) -> Result<i32, w
     let (user_id, created_at) = get_auth_token_info(&token, &db).await?;
 
     let now = Utc::now();
+
+    info!("Access with token: {}", trucate_auth_token(&token));
 
     if created_at + Duration::weeks(TOKEN_EXPIRATION_WEEKS) > now {
         Ok(user_id)
