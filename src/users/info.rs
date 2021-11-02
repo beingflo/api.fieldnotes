@@ -11,6 +11,7 @@ pub struct UserInfoResponse {
     balance: f64,
     salt: Option<String>,
     remaining_days: f64,
+    username: String,
 }
 
 /// Get user info
@@ -22,5 +23,6 @@ pub async fn user_info_handler(user_id: i32, db: PgPool) -> Result<impl warp::Re
         balance: user_info.balance as f64 / BALANCE_SCALE_FACTOR as f64,
         remaining_days,
         salt: user_info.salt,
+        username: user_info.username,
     }))
 }

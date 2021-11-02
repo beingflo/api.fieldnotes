@@ -49,6 +49,7 @@ pub struct UserCredentials {
 pub struct UserInfo {
     balance: i64,
     salt: Option<String>,
+    username: String,
 }
 
 #[derive(sqlx::Type, Debug)]
@@ -70,8 +71,8 @@ pub async fn is_funded(user_id: i32, db: PgPool) -> Result<(), warp::Rejection> 
 }
 
 async fn get_user_info(user_id: i32, db: &PgPool) -> Result<UserInfo, ApiError> {
-    let salt = query!(
-        "SELECT salt
+    let info = query!(
+        "SELECT username, salt
         FROM users 
         WHERE id = $1;",
         user_id,
@@ -136,7 +137,8 @@ async fn get_user_info(user_id: i32, db: &PgPool) -> Result<UserInfo, ApiError> 
 
     Ok(UserInfo {
         balance,
-        salt: salt.salt,
+        salt: info.salt,
+        username: info.username,
     })
 }
 
