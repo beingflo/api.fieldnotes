@@ -1,4 +1,4 @@
-use log::error;
+use log::{error};
 use thiserror::Error;
 use warp::http::StatusCode;
 use warp::reject::{InvalidHeader, MissingCookie};
@@ -28,10 +28,12 @@ impl warp::reject::Reject for ApiError {}
 impl warp::reply::Reply for ApiError {
     fn into_response(self) -> Response {
         match self {
-            ApiError::DBError(_db_error) => {
+            ApiError::DBError(db_error) => {
+                error!("DB error: {}", db_error);
                 return StatusCode::INTERNAL_SERVER_ERROR.into_response();
             }
-            ApiError::ViolatedAssertion(_assertion) => {
+            ApiError::ViolatedAssertion(assertion) => {
+                error!("Violated assertion: {}", assertion);
                 return StatusCode::INTERNAL_SERVER_ERROR.into_response();
             }
             ApiError::Unauthorized => {
