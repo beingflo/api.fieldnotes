@@ -61,10 +61,12 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
 
     if let Some(custom_error) = err.find::<ApiError>() {
         match custom_error {
-            ApiError::DBError(_db_error) => {
+            ApiError::DBError(db_error) => {
+                error!("DB error: {}", db_error);
                 return Ok(StatusCode::INTERNAL_SERVER_ERROR);
             }
-            ApiError::ViolatedAssertion(_assertion) => {
+            ApiError::ViolatedAssertion(assertion) => {
+                error!("Violated assertion: {}", assertion);
                 return Ok(StatusCode::INTERNAL_SERVER_ERROR);
             }
             ApiError::Unauthorized => {
@@ -82,11 +84,14 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
     Err(err)
 }
 
-pub async fn handle_errors<T: Reply, E: Reply>(
-    res: Result<T, E>,
+pub async fn handle_errors<T: Reply>(
+    res: Result<T, ApiError>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     match res {
         Ok(r) => Ok(r.into_response()),
-        Err(e) => Ok(e.into_response()),
+        Err(e) => {
+            error!("{}", e);
+            Ok(e.into_response())
+        },
     }
 }

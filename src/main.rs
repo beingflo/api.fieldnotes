@@ -9,7 +9,7 @@ mod users;
 mod util;
 
 use dotenv::dotenv;
-use log::{info, LevelFilter};
+use log::{LevelFilter, info};
 use schedule::{notes_deletion_schedule, tokens_deletion_schedule};
 use simplelog::{
     ColorChoice, CombinedLogger, ConfigBuilder, TermLogger, TerminalMode, WriteLogger,
@@ -24,10 +24,8 @@ use crate::error::handle_rejection;
 async fn main() {
     CombinedLogger::init(vec![
         TermLogger::new(
-            LevelFilter::Info,
+            LevelFilter::Warn,
             ConfigBuilder::new()
-                .add_filter_allow_str("textli")
-                .add_filter_allow_str("warp")
                 .set_time_format_str("%F %T")
                 .set_time_to_local(true)
                 .build(),
@@ -37,8 +35,6 @@ async fn main() {
         WriteLogger::new(
             LevelFilter::Info,
             ConfigBuilder::new()
-                .add_filter_allow_str("textli")
-                .add_filter_allow_str("warp")
                 .set_time_format_str("%F %T")
                 .set_time_to_local(true)
                 .build(),
