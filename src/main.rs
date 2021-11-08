@@ -131,6 +131,14 @@ async fn main() {
         .then(users::user_info_handler)
         .and_then(error::handle_errors);
 
+    let invalidate_all_sessions = warp::delete()
+        .and(warp::path("allsessions"))
+        .and(warp::path::end())
+        .and(is_authorized_with_user.clone())
+        .and(with_db.clone())
+        .then(users::invalidate_sessions)
+        .and_then(error::handle_errors);
+
     let store_salt = warp::put()
         .and(warp::path!("user" / "salt"))
         .and(warp::path::end())
@@ -146,7 +154,8 @@ async fn main() {
         .or(change_password)
         .or(store_salt)
         .or(delete_user)
-        .or(user_info);
+        .or(user_info)
+        .or(invalidate_all_sessions);
 
     let list_notes = warp::get()
         .and(warp::path("notes"))

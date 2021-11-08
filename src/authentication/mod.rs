@@ -76,3 +76,17 @@ pub async fn delete_auth_token(token: &str, db: &PgPool) -> Result<(), ApiError>
 
     Ok(())
 }
+
+// Delete all auth tokens of user from db
+pub async fn delete_all_auth_tokens(user_id: i32, db: &PgPool) -> Result<(), ApiError> {
+    query!(
+        "DELETE
+        FROM auth_tokens 
+        WHERE user_id = $1",
+        user_id
+    )
+    .execute(db)
+    .await?;
+
+    Ok(())
+}

@@ -5,6 +5,7 @@ mod login;
 mod logout;
 mod salt;
 mod signup;
+mod invalidate_sessions;
 
 pub use change_password::change_password_handler;
 use chrono::Utc;
@@ -14,6 +15,7 @@ pub use login::login_handler;
 pub use logout::logout_handler;
 pub use salt::store_salt_handler;
 pub use signup::signup_handler;
+pub use invalidate_sessions::invalidate_sessions;
 
 use crate::error::ApiError;
 use bcrypt::verify;
