@@ -45,6 +45,8 @@ async fn store_user(
     time: DateTime<Utc>,
     db: &PgPool,
 ) -> Result<(), ApiError> {
+    let mut tx = db.begin().await?;
+
     let result = query!(
         "INSERT INTO users (username, password, email, created_at)
         VALUES ($1, $2, $3, $4)
@@ -54,7 +56,7 @@ async fn store_user(
         email,
         time,
     )
-    .fetch_one(db)
+    .fetch_one(&mut tx)
     .await?;
 
     let user_id = result.id;
@@ -66,8 +68,10 @@ async fn store_user(
         TransactionEvent::StartTextli as TransactionEvent,
         time,
     )
-    .execute(db)
+    .execute(&mut tx)
     .await?;
+
+    tx.commit().await?;
 
     Ok(())
 }
