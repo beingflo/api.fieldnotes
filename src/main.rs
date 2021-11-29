@@ -24,9 +24,10 @@ use crate::error::handle_rejection;
 async fn main() {
     CombinedLogger::init(vec![
         TermLogger::new(
-            LevelFilter::Warn,
+            LevelFilter::Info,
             ConfigBuilder::new()
                 .set_time_format_str("%F %T")
+                .add_filter_allow_str("textli")
                 .set_time_to_local(true)
                 .build(),
             TerminalMode::Mixed,

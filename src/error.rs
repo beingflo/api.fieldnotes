@@ -37,12 +37,15 @@ impl warp::reply::Reply for ApiError {
                 return StatusCode::INTERNAL_SERVER_ERROR.into_response();
             }
             ApiError::Unauthorized => {
+                error!("Unauthorized from ApiError");
                 return StatusCode::UNAUTHORIZED.into_response();
             }
             ApiError::Underfunded => {
+                error!("Underfunded from ApiError");
                 return StatusCode::PAYMENT_REQUIRED.into_response();
             }
             ApiError::Conflict => {
+                error!("Conflict from ApiError");
                 return StatusCode::CONFLICT.into_response();
             }
         }
@@ -52,10 +55,12 @@ impl warp::reply::Reply for ApiError {
 /// Turn rejections into appropriate status codes
 pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
     if err.find::<MissingCookie>().is_some() {
+        error!("Missing Cookie Error: {:?}", err);
         return Ok(StatusCode::UNAUTHORIZED);
     }
 
     if err.find::<InvalidHeader>().is_some() {
+        error!("Invalid Header Error: {:?}", err);
         return Ok(StatusCode::UNAUTHORIZED);
     }
 
@@ -70,12 +75,15 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
                 return Ok(StatusCode::INTERNAL_SERVER_ERROR);
             }
             ApiError::Unauthorized => {
+                error!("Unauthorized from rejection");
                 return Ok(StatusCode::UNAUTHORIZED);
             }
             ApiError::Underfunded => {
+                error!("Underfunded from rejection");
                 return Ok(StatusCode::PAYMENT_REQUIRED);
             }
             ApiError::Conflict => {
+                error!("Conflict from rejection");
                 return Ok(StatusCode::CONFLICT);
             }
         }
