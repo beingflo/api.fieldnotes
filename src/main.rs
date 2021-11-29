@@ -131,6 +131,7 @@ async fn main() {
     let invalidate_all_sessions = warp::delete()
         .and(warp::path("allsessions"))
         .and(warp::path::end())
+        .and(warp::body::json())
         .and(is_authorized_with_user.clone())
         .and(with_db.clone())
         .then(users::invalidate_sessions)
