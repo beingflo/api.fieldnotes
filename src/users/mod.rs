@@ -57,8 +57,8 @@ pub struct UserInfo {
 #[derive(sqlx::Type, Debug)]
 #[sqlx(type_name = "event", rename_all = "lowercase")]
 enum TransactionEvent {
-    StartTextli,
-    PauseTextli,
+    StartFieldnotes,
+    PauseFieldnotes,
     AddFunds,
 }
 
@@ -102,7 +102,7 @@ async fn get_user_info(user_id: i32, db: &PgPool) -> Result<UserInfo, ApiError> 
             credit += transaction.amount.unwrap();
         }
 
-        if matches!(transaction.event, TransactionEvent::StartTextli) {
+        if matches!(transaction.event, TransactionEvent::StartFieldnotes) {
             if start_date.is_some() {
                 return Err(ApiError::ViolatedAssertion(
                     "Transactions corrupted: Subsquent start dates".into(),
@@ -111,7 +111,7 @@ async fn get_user_info(user_id: i32, db: &PgPool) -> Result<UserInfo, ApiError> 
             start_date = Some(transaction.date);
         }
 
-        if matches!(transaction.event, TransactionEvent::PauseTextli) {
+        if matches!(transaction.event, TransactionEvent::PauseFieldnotes) {
             if start_date.is_none() {
                 return Err(ApiError::ViolatedAssertion(
                     "Transactions corrupted: Pause event preceding start event".into(),

@@ -27,7 +27,7 @@ async fn main() {
             LevelFilter::Info,
             ConfigBuilder::new()
                 .set_time_format_str("%F %T")
-                .add_filter_allow_str("textli")
+                .add_filter_allow_str("fieldnotes")
                 .set_time_to_local(true)
                 .build(),
             TerminalMode::Mixed,
@@ -39,7 +39,7 @@ async fn main() {
                 .set_time_format_str("%F %T")
                 .set_time_to_local(true)
                 .build(),
-            File::create("textli.log").unwrap(),
+            File::create("fieldnotes.log").unwrap(),
         ),
     ])
     .unwrap();

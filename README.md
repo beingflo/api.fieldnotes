@@ -1,3 +1,3 @@
-# Textli API - Encrypted Markdown Editor
+# Fieldnotes - App server
 
-Backend component for Textli 
+Backend component for fieldnotes.land

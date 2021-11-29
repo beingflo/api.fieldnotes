@@ -1,5 +1,5 @@
 -- migrate:up
-CREATE TYPE event AS ENUM ('starttextli', 'pausetextli', 'addfunds');
+CREATE TYPE event AS ENUM ('startfieldnotes', 'pausefieldnotes', 'addfunds');
 
 CREATE TABLE transactions
 ( 

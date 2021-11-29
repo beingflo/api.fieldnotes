@@ -65,7 +65,7 @@ async fn store_user(
         "INSERT INTO transactions (user_id, event, date)
         VALUES ($1, $2, $3);",
         user_id,
-        TransactionEvent::StartTextli as TransactionEvent,
+        TransactionEvent::StartFieldnotes as TransactionEvent,
         time,
     )
     .execute(&mut tx)
