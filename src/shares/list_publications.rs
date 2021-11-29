@@ -3,6 +3,7 @@ use chrono::{DateTime, Utc};
 use serde::Serialize;
 use sqlx::{query, PgPool};
 use tokio_stream::StreamExt;
+use crate::users::user_exists_and_is_active;
 
 /// List publications response
 #[derive(Serialize)]
@@ -20,7 +21,15 @@ pub async fn list_publications_handler(
     username: String,
     db: PgPool,
 ) -> Result<impl warp::Reply, ApiError> {
+    if !user_exists_and_is_active(&username, &db).await? {
+        return Err(ApiError::NotFound);
+    }
+
     let shares = list_publications(username, &db).await?;
+
+    if shares.len() == 0 {
+        return Err(ApiError::NotFound);
+    }
 
     Ok(warp::reply::json(&shares))
 }

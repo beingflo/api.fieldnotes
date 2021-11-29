@@ -16,6 +16,9 @@ pub enum ApiError {
     #[error("Unauthorized")]
     Unauthorized,
 
+    #[error("Not Found")]
+    NotFound,
+
     #[error("Underfunded")]
     Underfunded,
 
@@ -39,6 +42,10 @@ impl warp::reply::Reply for ApiError {
             ApiError::Unauthorized => {
                 error!("Unauthorized from ApiError");
                 return StatusCode::UNAUTHORIZED.into_response();
+            }
+            ApiError::NotFound => {
+                error!("Not Found from ApiError");
+                return StatusCode::NOT_FOUND.into_response();
             }
             ApiError::Underfunded => {
                 error!("Underfunded from ApiError");
@@ -77,6 +84,10 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
             ApiError::Unauthorized => {
                 error!("Unauthorized from rejection");
                 return Ok(StatusCode::UNAUTHORIZED);
+            }
+            ApiError::NotFound => {
+                error!("Not Found from rejection");
+                return Ok(StatusCode::NOT_FOUND);
             }
             ApiError::Underfunded => {
                 error!("Underfunded from rejection");
