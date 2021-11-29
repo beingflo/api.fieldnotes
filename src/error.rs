@@ -1,4 +1,4 @@
-use log::{error};
+use log::error;
 use thiserror::Error;
 use warp::http::StatusCode;
 use warp::reject::{InvalidHeader, MissingCookie};
@@ -100,6 +100,6 @@ pub async fn handle_errors<T: Reply>(
         Err(e) => {
             error!("{}", e);
             Ok(e.into_response())
-        },
+        }
     }
 }

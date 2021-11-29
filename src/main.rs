@@ -9,7 +9,7 @@ mod users;
 mod util;
 
 use dotenv::dotenv;
-use log::{LevelFilter, info};
+use log::{info, LevelFilter};
 use schedule::{notes_deletion_schedule, tokens_deletion_schedule};
 use simplelog::{
     ColorChoice, CombinedLogger, ConfigBuilder, TermLogger, TerminalMode, WriteLogger,

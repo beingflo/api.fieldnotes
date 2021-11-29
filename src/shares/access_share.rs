@@ -1,4 +1,4 @@
-use crate::{error::ApiError, shares::get_share_expiration};
+use crate::{error::ApiError, shares::get_share_expiration, shares::KeyJson};
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use sqlx::{query, PgPool};
@@ -9,7 +9,7 @@ pub struct AccessShareResponse {
     created_at: DateTime<Utc>,
     modified_at: DateTime<Utc>,
     content: String,
-    key: String,
+    iv: String,
 }
 
 pub async fn access_share_handler(token: String, db: PgPool) -> Result<impl warp::Reply, ApiError> {
@@ -48,12 +48,23 @@ async fn access_share(token: &str, db: &PgPool) -> Result<AccessShareResponse, A
     .fetch_optional(db)
     .await?
     {
-        Some(row) => Ok(AccessShareResponse {
-            created_at: row.created_at,
-            modified_at: row.modified_at,
-            content: row.content,
-            key: row.key,
-        }),
+        Some(row) => {
+            let key: KeyJson = match serde_json::from_str(&row.key) {
+                Ok(key) => key,
+                Err(_) => {
+                    return Err(ApiError::ViolatedAssertion(
+                        "key field not serializable".to_string(),
+                    ))
+                }
+            };
+
+            Ok(AccessShareResponse {
+                created_at: row.created_at,
+                modified_at: row.modified_at,
+                content: row.content,
+                iv: key.iv_content,
+            })
+        }
         None => Err(ApiError::Unauthorized),
     }
 }

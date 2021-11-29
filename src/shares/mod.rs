@@ -12,7 +12,15 @@ pub use list_shares::list_shares_handler;
 
 use crate::error::ApiError;
 use chrono::{DateTime, Utc};
+use serde::Deserialize;
 use sqlx::{query, PgPool};
+
+/// Key type
+#[derive(Deserialize)]
+pub struct KeyJson {
+    iv_metadata: String,
+    iv_content: String,
+}
 
 async fn get_share_expiration(token: &str, db: &PgPool) -> Result<Option<DateTime<Utc>>, ApiError> {
     match query!(

@@ -1,21 +1,21 @@
 mod change_password;
 mod delete_user;
 mod info;
+mod invalidate_sessions;
 mod login;
 mod logout;
 mod salt;
 mod signup;
-mod invalidate_sessions;
 
 pub use change_password::change_password_handler;
 use chrono::Utc;
 pub use delete_user::delete_user_handler;
 pub use info::user_info_handler;
+pub use invalidate_sessions::invalidate_sessions;
 pub use login::login_handler;
 pub use logout::logout_handler;
 pub use salt::store_salt_handler;
 pub use signup::signup_handler;
-pub use invalidate_sessions::invalidate_sessions;
 
 use crate::error::ApiError;
 use bcrypt::verify;

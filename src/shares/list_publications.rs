@@ -1,4 +1,4 @@
-use crate::error::ApiError;
+use crate::{error::ApiError, shares::KeyJson};
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use sqlx::{query, PgPool};
@@ -12,7 +12,7 @@ pub struct ListPublicationResponse {
     modified_at: DateTime<Utc>,
     metadata: String,
     public: String,
-    key: String,
+    iv: String,
 }
 
 /// List published notes
@@ -42,12 +42,17 @@ async fn list_publications(
     let mut publications: Vec<ListPublicationResponse> = Vec::new();
 
     while let Some(row) = rows.try_next().await? {
+        let key: KeyJson = match serde_json::from_str(&row.key) {
+            Ok(key) => key,
+            Err(_) => continue,
+        };
+
         publications.push(ListPublicationResponse {
             token: row.token,
             created_at: row.created_at,
             modified_at: row.modified_at,
             metadata: row.metadata,
-            key: row.key,
+            iv: key.iv_metadata,
             public: row.public.unwrap(),
         });
     }
