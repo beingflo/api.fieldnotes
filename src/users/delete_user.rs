@@ -1,5 +1,5 @@
 use crate::error::ApiError;
-use crate::users::{get_password, user_exists_and_matches_id, verify_password, UserCredentials};
+use crate::users::{TransactionEvent, UserCredentials, get_password, user_exists_and_matches_id, verify_password};
 use chrono::Utc;
 use sqlx::{query, PgPool};
 use warp::http::StatusCode;
@@ -58,6 +58,16 @@ pub async fn delete_all_user_data(user_id: i32, db: &PgPool) -> Result<(), ApiEr
     .await?;
 
     let now = Utc::now();
+
+    query!(
+        "INSERT INTO transactions (user_id, event, date)
+        VALUES ($1, $2, $3);",
+        user_id,
+        TransactionEvent::PauseFieldnotes as TransactionEvent,
+        now,
+    )
+    .execute(&mut tx)
+    .await?;
 
     query!(
         "UPDATE users
