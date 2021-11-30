@@ -1,5 +1,6 @@
 use crate::{error::ApiError, shares::get_share_expiration, shares::KeyJson};
 use chrono::{DateTime, Utc};
+use log::error;
 use serde::Serialize;
 use sqlx::{query, PgPool};
 
@@ -51,9 +52,10 @@ async fn access_share(token: &str, db: &PgPool) -> Result<AccessShareResponse, A
         Some(row) => {
             let key: KeyJson = match serde_json::from_str(&row.key) {
                 Ok(key) => key,
-                Err(_) => {
+                Err(err) => {
+                    error!("Serde error: {:?}", err);
                     return Err(ApiError::ViolatedAssertion(
-                        "key field not serializable".to_string(),
+                        "Key field not serializable".to_string(),
                     ))
                 }
             };

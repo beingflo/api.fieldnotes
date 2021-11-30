@@ -1,5 +1,6 @@
 use crate::{error::ApiError, shares::KeyJson};
 use chrono::{DateTime, Utc};
+use log::warn;
 use serde::Serialize;
 use sqlx::{query, PgPool};
 use tokio_stream::StreamExt;
@@ -53,7 +54,10 @@ async fn list_publications(
     while let Some(row) = rows.try_next().await? {
         let key: KeyJson = match serde_json::from_str(&row.key) {
             Ok(key) => key,
-            Err(_) => continue,
+            Err(err) => {
+                warn!("Serde error: {:?}", err);
+                continue
+            }
         };
 
         publications.push(ListPublicationResponse {
