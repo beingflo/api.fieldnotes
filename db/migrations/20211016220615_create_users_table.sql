@@ -6,6 +6,7 @@ CREATE TABLE users
   password text NOT NULL,
   email text,
   salt text,
+  metadata text,
   created_at TIMESTAMPTZ NOT NULL,
   deleted_at TIMESTAMPTZ
 );
