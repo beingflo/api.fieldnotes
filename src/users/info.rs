@@ -13,6 +13,7 @@ pub struct UserInfoResponse {
     remaining_days: f64,
     username: String,
     email: Option<String>,
+    test: String,
 }
 
 /// Get user info
