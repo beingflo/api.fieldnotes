@@ -2,7 +2,7 @@ name: Prod build & deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
   workflow_dispatch:
 
@@ -11,7 +11,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-     - uses: actions/checkout@v1
+      - uses: actions/checkout@v1
+
       - uses: icepuma/rust-action@master
         with:
           args: cargo test
