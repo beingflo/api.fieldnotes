@@ -1,0 +1,8 @@
+version: '3.3'
+services:
+  fieldnotes-api:
+    image: fieldnotes-api
+    container_name: fieldnotes-api
+    ports:
+      - 5005:5005
+    restart: unless-stopped
