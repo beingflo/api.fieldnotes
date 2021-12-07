@@ -11,6 +11,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+     - uses: actions/checkout@v1
+      - uses: icepuma/rust-action@master
+        with:
+          args: cargo test
+
       - name: log into VPS and trigger deploy script
         uses: appleboy/ssh-action@master
         with:
