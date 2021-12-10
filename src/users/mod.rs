@@ -27,7 +27,8 @@ use sqlx::{query, PgPool};
 pub const BALANCE_SCALE_FACTOR: i64 = 1_000_000;
 
 /// Default starting balance for new users
-pub const DEFAULT_BALANCE: i64 = 1_000_000;
+/// Increased for beta TODO revert later
+pub const DEFAULT_BALANCE: i64 = 20_000_000;
 
 /// Once balance falls below this threshold,
 /// account becomes read only
