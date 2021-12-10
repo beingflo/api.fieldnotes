@@ -1,0 +1,23 @@
+version: '3.3'
+services:
+  postgres-db:
+    image: postgres:latest
+    container_name: postgres-staging
+    ports:
+      - 5432:5432
+    env_file:
+      - .env
+    volumes:
+      - ~/docker/volumes/postgres:/var/lib/postgresql/data/
+    restart: unless-stopped
+
+  fieldnotes-api:
+    image: fieldnotes-api
+    container_name: fieldnotes-api
+    ports:
+      - 5005:5005
+    depends_on:
+      - postgres-db
+    links:
+      - 'postgres-db:postgres-db'
+    restart: unless-stopped
