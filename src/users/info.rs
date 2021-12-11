@@ -13,6 +13,7 @@ pub struct UserInfoResponse {
     remaining_days: f64,
     username: String,
     email: Option<String>,
+    test: String,
 }
 
 /// Get user info
@@ -26,5 +27,6 @@ pub async fn user_info_handler(user_id: i32, db: PgPool) -> Result<impl warp::Re
         salt: user_info.salt,
         username: user_info.username,
         email: user_info.email,
+        test: "staging".to_string(),
     }))
 }
