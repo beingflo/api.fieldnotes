@@ -270,6 +270,9 @@ async fn main() {
             dotenv::var("READ_APP")
                 .expect("READ_APP env variable missing")
                 .as_str(),
+            dotenv::var("READ_APP_WWW")
+                .expect("READ_APP_WWW env variable missing")
+                .as_str(),
         ])
         .allow_headers(vec!["content-type"])
         .allow_credentials(true)
