@@ -1,49 +1,5 @@
 {
   "db": "PostgreSQL",
-  "035fbf0f1b543b5b0c6b210abf7080a9a0f29435e272afd3e0ec71d2fa1175f4": {
-    "query": "SELECT shares.token, shares.expires_at, notes.token AS note_token, shares.created_at, shares.public\n        FROM shares \n        INNER JOIN notes ON shares.note_id = notes.id\n        WHERE shares.user_id = $1;",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "token",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 1,
-          "name": "expires_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 2,
-          "name": "note_token",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 3,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 4,
-          "name": "public",
-          "type_info": "Text"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Int4"
-        ]
-      },
-      "nullable": [
-        false,
-        true,
-        false,
-        false,
-        true
-      ]
-    }
-  },
   "106f692729b36e279529968ab94443dc1c27337b42a530255dabe7df2dc4326a": {
     "query": "UPDATE shares\n        SET view_count = view_count + 1\n        WHERE shares.token = $1;",
     "describe": {
@@ -823,6 +779,56 @@
         false,
         true,
         false
+      ]
+    }
+  },
+  "e6135ef7b3a73db8e9105dff0b05c30235cf2af6cc1bbd1ff91249efa37f42b3": {
+    "query": "SELECT shares.token, shares.expires_at, notes.token AS note_token, shares.view_count, shares.created_at, shares.public\n        FROM shares \n        INNER JOIN notes ON shares.note_id = notes.id\n        WHERE shares.user_id = $1;",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "token",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 1,
+          "name": "expires_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 2,
+          "name": "note_token",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "view_count",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 4,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 5,
+          "name": "public",
+          "type_info": "Text"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      },
+      "nullable": [
+        false,
+        true,
+        false,
+        false,
+        false,
+        true
       ]
     }
   },
