@@ -10,6 +10,7 @@ pub struct ListShareResponse {
     token: String,
     note: String,
     public: Option<String>,
+    view_count: i32,
     created_at: DateTime<Utc>,
     expires_at: Option<DateTime<Utc>>,
 }
@@ -23,7 +24,7 @@ pub async fn list_shares_handler(user_id: i32, db: PgPool) -> Result<impl warp::
 
 async fn list_shares(user_id: i32, db: &PgPool) -> Result<Vec<ListShareResponse>, ApiError> {
     let mut rows = query!(
-        "SELECT shares.token, shares.expires_at, notes.token AS note_token, shares.created_at, shares.public
+        "SELECT shares.token, shares.expires_at, notes.token AS note_token, shares.view_count, shares.created_at, shares.public
         FROM shares 
         INNER JOIN notes ON shares.note_id = notes.id
         WHERE shares.user_id = $1;",
@@ -37,6 +38,7 @@ async fn list_shares(user_id: i32, db: &PgPool) -> Result<Vec<ListShareResponse>
         shares.push(ListShareResponse {
             token: note.token,
             note: note.note_token,
+            view_count: note.view_count,
             expires_at: note.expires_at,
             created_at: note.created_at,
             public: note.public,
