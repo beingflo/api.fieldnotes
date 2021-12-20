@@ -1,4 +1,4 @@
-use crate::{users::{TransactionEvent, UserCredentials, get_password, user_exists_and_matches_id, verify_password}, error::AppError, authentication::AuthorizedUser};
+use crate::{users::{TransactionEvent, UserCredentials, get_password, user_exists_and_matches_id, verify_password}, error::AppError, authentication::AuthenticatedUser};
 use axum::{Json, extract::Extension};
 use chrono::Utc;
 use hyper::StatusCode;
@@ -7,7 +7,7 @@ use sqlx::{query, PgPool};
 /// Delete user with all associated data
 pub async fn delete_user_handler(
     Json(credentials): Json<UserCredentials>,
-    user: AuthorizedUser,
+    user: AuthenticatedUser,
     db: Extension<PgPool>,
 ) -> Result<StatusCode, AppError> {
     if !user_exists_and_matches_id(&credentials.name, user.user_id, &db).await? {

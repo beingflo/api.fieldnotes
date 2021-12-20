@@ -14,9 +14,9 @@ use simplelog::{
 };
 use sqlx::postgres::PgPoolOptions;
 use std::{fs::File, net::SocketAddr};
-use axum::{Server, Router, routing::{post, delete}, AddExtensionLayer};
+use axum::{Server, Router, routing::{post, delete, put}, AddExtensionLayer};
 
-use crate::users::{signup_handler, login_handler, delete_user_handler};
+use crate::users::{signup_handler, login_handler, delete_user_handler, change_password_handler};
 
 #[tokio::main]
 async fn main() {
@@ -57,6 +57,7 @@ async fn main() {
         .route("/user", post(signup_handler))
         .route("/session", post(login_handler))
         .route("/user", delete(delete_user_handler))
+        .route("/user", put(change_password_handler))
         .layer(AddExtensionLayer::new(db));
 
     //let change_password = warp::put()

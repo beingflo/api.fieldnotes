@@ -7,13 +7,13 @@ use sqlx::{query, PgPool, Pool, Postgres};
 /// Token expiration time: 2 months
 pub const TOKEN_EXPIRATION_WEEKS: i64 = 8;
 
-pub struct AuthorizedUser {
+pub struct AuthenticatedUser {
     pub user_id: i32,
     pub username: String,
 }
 
 #[async_trait]
-impl<B> FromRequest<B> for AuthorizedUser 
+impl<B> FromRequest<B> for AuthenticatedUser 
 where
     B: Send,
 {
@@ -50,7 +50,7 @@ where
 
 // Checks if user has proper authorization token for request and return user id
 // used in further filters and handlers.
-pub async fn is_authorized_with_user(token: String, db: PgPool) -> Result<AuthorizedUser, AppError> {
+pub async fn is_authorized_with_user(token: String, db: PgPool) -> Result<AuthenticatedUser, AppError> {
     let (authorized_user, created_at) = get_auth_token_info(&token, &db).await?;
 
     let now = Utc::now();
@@ -68,7 +68,7 @@ pub async fn is_authorized_with_user(token: String, db: PgPool) -> Result<Author
 async fn get_auth_token_info(
     token: &str,
     db: &PgPool,
-) -> Result<(AuthorizedUser, DateTime<Utc>), AppError> {
+) -> Result<(AuthenticatedUser, DateTime<Utc>), AppError> {
     match query!(
         "SELECT users.id, users.username, auth_tokens.created_at
         FROM auth_tokens 
@@ -80,7 +80,7 @@ async fn get_auth_token_info(
     .await
     .map_err(|e| AppError::DBError(e))?
     {
-        Some(tok) => Ok((AuthorizedUser {user_id: tok.id, username: tok.username }, tok.created_at)),
+        Some(tok) => Ok((AuthenticatedUser {user_id: tok.id, username: tok.username }, tok.created_at)),
         None => Err(AppError::Unauthorized),
     }
 }

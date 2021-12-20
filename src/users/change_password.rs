@@ -1,9 +1,9 @@
-use crate::error_warp::ApiError;
-use crate::users::{get_password, user_exists_and_matches_id, verify_password, BCRYPT_COST};
+use crate::{users::{get_password, user_exists_and_matches_id, verify_password, BCRYPT_COST}, error::AppError, authentication::{AuthenticatedUser}};
+use axum::{Json, extract::Extension};
 use bcrypt::hash;
+use hyper::StatusCode;
 use serde::Deserialize;
 use sqlx::{query, PgPool};
-use warp::http::StatusCode;
 
 /// This request form is expected for changing password
 #[derive(Deserialize)]
@@ -15,11 +15,11 @@ pub struct PasswordChangeRequest {
 
 /// Change password of existing user
 pub async fn change_password_handler(
-    credentials: PasswordChangeRequest,
-    user_id: i32,
-    db: PgPool,
-) -> Result<impl warp::Reply, ApiError> {
-    if !user_exists_and_matches_id(&credentials.name, user_id, &db).await? {
+    Json(credentials): Json<PasswordChangeRequest>,
+    user: AuthenticatedUser,
+    db: Extension<PgPool>,
+) -> Result<StatusCode, AppError> {
+    if !user_exists_and_matches_id(&credentials.name, user.user_id, &db).await? {
         return Ok(StatusCode::UNAUTHORIZED);
     }
 
@@ -38,13 +38,13 @@ pub async fn change_password_handler(
 
     let hashed_password = hashed_password.unwrap();
 
-    change_password(user_id, &hashed_password, &db).await?;
+    change_password(user.user_id, &hashed_password, &db).await?;
 
     Ok(StatusCode::OK)
 }
 
 // Update password of existing user
-async fn change_password(user_id: i32, password_hash: &str, db: &PgPool) -> Result<(), ApiError> {
+async fn change_password(user_id: i32, password_hash: &str, db: &PgPool) -> Result<(), AppError> {
     let result = query!(
         "UPDATE users 
         SET password = $1
@@ -58,7 +58,7 @@ async fn change_password(user_id: i32, password_hash: &str, db: &PgPool) -> Resu
     if result.rows_affected() == 1 {
         Ok(())
     } else {
-        Err(ApiError::ViolatedAssertion(
+        Err(AppError::ViolatedAssertion(
             "No rows affected when changing password".to_string(),
         ))
     }

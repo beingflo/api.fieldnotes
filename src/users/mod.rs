@@ -1,4 +1,4 @@
-//mod change_password;
+mod change_password;
 mod delete_user;
 //mod info;
 //mod invalidate_sessions;
@@ -8,7 +8,7 @@ mod login;
 mod signup;
 use chrono::Utc;
 //
-//pub use change_password::change_password_handler;
+pub use change_password::change_password_handler;
 //use chrono::Utc;
 pub use delete_user::delete_user_handler;
 //pub use info::user_info_handler;
