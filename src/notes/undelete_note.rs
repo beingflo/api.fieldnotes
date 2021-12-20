@@ -1,5 +1,6 @@
-use crate::error::ApiError;
+use crate::error_warp::ApiError;
 use chrono::{DateTime, Utc};
+use hyper::StatusCode;
 use serde::Serialize;
 use sqlx::{query, PgPool};
 
@@ -20,9 +21,10 @@ pub async fn undelete_note_handler(
     user_id: i32,
     db: PgPool,
 ) -> Result<impl warp::Reply, ApiError> {
-    let note: UndeleteNoteResponse = undelete_note(user_id, &token, &db).await?;
+    //let note: UndeleteNoteResponse = undelete_note(user_id, &token, &db).await?;
 
-    Ok(warp::reply::json(&note))
+    //Ok(warp::reply::json(&note))
+    Ok(StatusCode::OK)
 }
 
 async fn undelete_note(

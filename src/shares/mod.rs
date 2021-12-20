@@ -10,7 +10,7 @@ pub use delete_share::delete_share_handler;
 pub use list_publications::list_publications_handler;
 pub use list_shares::list_shares_handler;
 
-use crate::error::ApiError;
+use crate::error_warp::ApiError;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use sqlx::{query, PgPool};

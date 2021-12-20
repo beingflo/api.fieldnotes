@@ -1,5 +1,5 @@
 use crate::authentication::delete_auth_token;
-use crate::error::ApiError;
+use crate::error_warp::ApiError;
 use crate::util::get_cookie_headers;
 use chrono::Duration;
 use sqlx::PgPool;

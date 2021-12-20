@@ -1,4 +1,4 @@
-use crate::error::ApiError;
+use crate::error_warp::ApiError;
 use crate::users::{get_password, user_exists_and_matches_id, verify_password, BCRYPT_COST};
 use bcrypt::hash;
 use serde::Deserialize;

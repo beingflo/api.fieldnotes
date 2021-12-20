@@ -1,23 +1,24 @@
-mod change_password;
-mod delete_user;
-mod info;
-mod invalidate_sessions;
+//mod change_password;
+//mod delete_user;
+//mod info;
+//mod invalidate_sessions;
 mod login;
-mod logout;
-mod salt;
+//mod logout;
+//mod salt;
 mod signup;
-
-pub use change_password::change_password_handler;
 use chrono::Utc;
-pub use delete_user::delete_user_handler;
-pub use info::user_info_handler;
-pub use invalidate_sessions::invalidate_sessions;
+//
+//pub use change_password::change_password_handler;
+//use chrono::Utc;
+//pub use delete_user::delete_user_handler;
+//pub use info::user_info_handler;
+//pub use invalidate_sessions::invalidate_sessions;
 pub use login::login_handler;
-pub use logout::logout_handler;
-pub use salt::store_salt_handler;
+//pub use logout::logout_handler;
+//pub use salt::store_salt_handler;
 pub use signup::signup_handler;
 
-use crate::error::ApiError;
+use crate::error::AppError;
 use bcrypt::verify;
 use log::error;
 use serde::Deserialize;
@@ -64,17 +65,17 @@ enum TransactionEvent {
     AddFunds,
 }
 
-pub async fn is_funded(user_id: i32, db: PgPool) -> Result<(), warp::Rejection> {
-    let user_info = get_user_info(user_id, &db).await?;
+//pub async fn is_funded(user_id: i32, db: PgPool) -> Result<(), warp::Rejection> {
+//    let user_info = get_user_info(user_id, &db).await?;
+//
+//    if user_info.balance > FUNDED_BALANCE {
+//        Ok(())
+//    } else {
+//        Err(warp::reject::custom(ApiError::Underfunded))
+//    }
+//}
 
-    if user_info.balance > FUNDED_BALANCE {
-        Ok(())
-    } else {
-        Err(warp::reject::custom(ApiError::Underfunded))
-    }
-}
-
-async fn get_user_info(user_id: i32, db: &PgPool) -> Result<UserInfo, ApiError> {
+async fn get_user_info(user_id: i32, db: &PgPool) -> Result<UserInfo, AppError> {
     let info = query!(
         "SELECT username, salt, email
         FROM users 
@@ -106,7 +107,7 @@ async fn get_user_info(user_id: i32, db: &PgPool) -> Result<UserInfo, ApiError> 
 
         if matches!(transaction.event, TransactionEvent::StartFieldnotes) {
             if start_date.is_some() {
-                return Err(ApiError::ViolatedAssertion(
+                return Err(AppError::ViolatedAssertion(
                     "Transactions corrupted: Subsquent start dates".into(),
                 ));
             }
@@ -115,7 +116,7 @@ async fn get_user_info(user_id: i32, db: &PgPool) -> Result<UserInfo, ApiError> 
 
         if matches!(transaction.event, TransactionEvent::PauseFieldnotes) {
             if start_date.is_none() {
-                return Err(ApiError::ViolatedAssertion(
+                return Err(AppError::ViolatedAssertion(
                     "Transactions corrupted: Pause event preceding start event".into(),
                 ));
             }
@@ -147,29 +148,30 @@ async fn get_user_info(user_id: i32, db: &PgPool) -> Result<UserInfo, ApiError> 
     })
 }
 
-async fn user_exists(name: &str, db: &PgPool) -> Result<bool, ApiError> {
-    let result = query!(
-        "SELECT COUNT(id)
-        FROM users 
-        WHERE username = $1;",
-        name
-    )
-    .fetch_one(db)
-    .await;
+async fn user_exists(name: &str, db: &PgPool) -> Result<bool, AppError> {
+  let result = query!(
+      "SELECT COUNT(id)
+      FROM users 
+      WHERE username = $1;",
+      name
+  )
+  .fetch_one(db)
+  .await;
 
-    match result {
-        Ok(row) => {
-            if let Some(0) = row.count {
-                Ok(false)
-            } else {
-                Ok(true)
-            }
-        }
-        Err(error) => Err(ApiError::DBError(error)),
-    }
+  match result {
+      Ok(row) => {
+          if let Some(0) = row.count {
+              Ok(false)
+          } else {
+              Ok(true)
+          }
+      }
+      Err(error) => Err(AppError::DBError(error)),
+  }
 }
 
-pub async fn user_exists_and_is_active(name: &str, db: &PgPool) -> Result<bool, ApiError> {
+
+pub async fn user_exists_and_is_active(name: &str, db: &PgPool) -> Result<bool, AppError> {
     let result = query!(
         "SELECT COUNT(id)
         FROM users 
@@ -187,7 +189,7 @@ pub async fn user_exists_and_is_active(name: &str, db: &PgPool) -> Result<bool, 
                 Ok(true)
             }
         }
-        Err(error) => Err(ApiError::DBError(error)),
+        Err(error) => Err(AppError::DBError(error)),
     }
 }
 
@@ -195,7 +197,7 @@ async fn user_exists_and_matches_id(
     name: &str,
     user_id: i32,
     db: &PgPool,
-) -> Result<bool, ApiError> {
+) -> Result<bool, AppError> {
     match query!(
         "SELECT id
         FROM users 
@@ -212,12 +214,12 @@ async fn user_exists_and_matches_id(
                 Ok(false)
             }
         }
-        None => Err(ApiError::Unauthorized),
+        None => Err(AppError::Unauthorized),
     }
 }
 
 /// Retrieve stored password hash for existing user.
-pub async fn get_password(name: &str, db: &PgPool) -> Result<String, ApiError> {
+pub async fn get_password(name: &str, db: &PgPool) -> Result<String, AppError> {
     let result = query!(
         "SELECT password
         FROM users 
@@ -231,11 +233,11 @@ pub async fn get_password(name: &str, db: &PgPool) -> Result<String, ApiError> {
 }
 
 /// Verify supplied password for user.
-async fn verify_password(password: &str, hash: &str) -> Result<bool, ApiError> {
+async fn verify_password(password: &str, hash: &str) -> Result<bool, AppError> {
     match verify(password, hash) {
         Err(err) => {
             error!("Error while verifying password: {:?}", err);
-            Err(ApiError::ViolatedAssertion(
+            Err(AppError::ViolatedAssertion(
                 "brcypt verify error".to_string(),
             ))
         }

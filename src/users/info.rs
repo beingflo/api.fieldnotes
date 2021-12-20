@@ -1,5 +1,5 @@
 use crate::{
-    error::ApiError,
+    error_warp::ApiError,
     users::{get_user_info, BALANCE_SCALE_FACTOR, DAILY_BALANCE_COST},
 };
 use serde::Serialize;

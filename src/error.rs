@@ -1,116 +1,32 @@
+use axum::response::{IntoResponse, Response};
+use hyper::StatusCode;
 use log::error;
 use thiserror::Error;
-use warp::http::StatusCode;
-use warp::reject::{InvalidHeader, MissingCookie};
-use warp::reply::Response;
-use warp::{Rejection, Reply};
 
 #[derive(Error, Debug)]
-pub enum ApiError {
+pub enum AppError {
     #[error("Database error")]
     DBError(#[from] sqlx::Error),
 
-    #[error("{0}")]
-    ViolatedAssertion(String),
+    #[error("Conflict")]
+    Conflict,
 
     #[error("Unauthorized")]
     Unauthorized,
 
-    #[error("Not Found")]
-    NotFound,
-
-    #[error("Underfunded")]
-    Underfunded,
-
-    #[error("Conflict")]
-    Conflict,
+    #[error("{0}")]
+    ViolatedAssertion(String),
 }
 
-impl warp::reject::Reject for ApiError {}
-
-impl warp::reply::Reply for ApiError {
+impl IntoResponse for AppError {
     fn into_response(self) -> Response {
-        match self {
-            ApiError::DBError(db_error) => {
-                error!("DB error: {}", db_error);
-                return StatusCode::INTERNAL_SERVER_ERROR.into_response();
-            }
-            ApiError::ViolatedAssertion(assertion) => {
-                error!("Violated assertion: {}", assertion);
-                return StatusCode::INTERNAL_SERVER_ERROR.into_response();
-            }
-            ApiError::Unauthorized => {
-                error!("Unauthorized from ApiError");
-                return StatusCode::UNAUTHORIZED.into_response();
-            }
-            ApiError::NotFound => {
-                error!("Not Found from ApiError");
-                return StatusCode::NOT_FOUND.into_response();
-            }
-            ApiError::Underfunded => {
-                error!("Underfunded from ApiError");
-                return StatusCode::PAYMENT_REQUIRED.into_response();
-            }
-            ApiError::Conflict => {
-                error!("Conflict from ApiError");
-                return StatusCode::CONFLICT.into_response();
-            }
-        }
-    }
-}
+        let status = match self {
+            AppError::DBError(error) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::Conflict => StatusCode::CONFLICT,
+            AppError::Unauthorized => StatusCode::UNAUTHORIZED,
+            AppError::ViolatedAssertion(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        };
 
-/// Turn rejections into appropriate status codes
-pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
-    if err.find::<MissingCookie>().is_some() {
-        error!("Missing Cookie Error: {:?}", err);
-        return Ok(StatusCode::UNAUTHORIZED);
-    }
-
-    if err.find::<InvalidHeader>().is_some() {
-        error!("Invalid Header Error: {:?}", err);
-        return Ok(StatusCode::UNAUTHORIZED);
-    }
-
-    if let Some(custom_error) = err.find::<ApiError>() {
-        match custom_error {
-            ApiError::DBError(db_error) => {
-                error!("DB error: {}", db_error);
-                return Ok(StatusCode::INTERNAL_SERVER_ERROR);
-            }
-            ApiError::ViolatedAssertion(assertion) => {
-                error!("Violated assertion: {}", assertion);
-                return Ok(StatusCode::INTERNAL_SERVER_ERROR);
-            }
-            ApiError::Unauthorized => {
-                error!("Unauthorized from rejection");
-                return Ok(StatusCode::UNAUTHORIZED);
-            }
-            ApiError::NotFound => {
-                error!("Not Found from rejection");
-                return Ok(StatusCode::NOT_FOUND);
-            }
-            ApiError::Underfunded => {
-                error!("Underfunded from rejection");
-                return Ok(StatusCode::PAYMENT_REQUIRED);
-            }
-            ApiError::Conflict => {
-                error!("Conflict from rejection");
-                return Ok(StatusCode::CONFLICT);
-            }
-        }
-    }
-
-    Err(err)
-}
-
-pub async fn handle_errors<T: Reply>(
-    res: Result<T, ApiError>,
-) -> Result<impl warp::Reply, warp::Rejection> {
-    match res {
-        Ok(r) => Ok(r.into_response()),
-        Err(e) => {
-            error!("{}", e);
-            Ok(e.into_response())
-        }
+        status.into_response()
     }
 }

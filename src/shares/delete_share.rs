@@ -1,4 +1,4 @@
-use crate::error::ApiError;
+use crate::error_warp::ApiError;
 use sqlx::{query, PgPool};
 use warp::http::StatusCode;
 

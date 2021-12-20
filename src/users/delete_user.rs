@@ -1,4 +1,4 @@
-use crate::error::ApiError;
+use crate::error_warp::ApiError;
 use crate::users::{TransactionEvent, UserCredentials, get_password, user_exists_and_matches_id, verify_password};
 use chrono::Utc;
 use sqlx::{query, PgPool};

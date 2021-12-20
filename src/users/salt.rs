@@ -1,7 +1,5 @@
-use crate::error::ApiError;
 use serde::Deserialize;
 use sqlx::{query, PgPool};
-use warp::http::StatusCode;
 
 /// This request form is expected for storing salt
 #[derive(Deserialize)]

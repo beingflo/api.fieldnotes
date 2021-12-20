@@ -1,4 +1,4 @@
-use crate::{error::ApiError, shares::get_share_expiration, shares::KeyJson};
+use crate::{error_warp::ApiError, shares::get_share_expiration, shares::KeyJson};
 use chrono::{DateTime, Utc};
 use log::error;
 use serde::Serialize;

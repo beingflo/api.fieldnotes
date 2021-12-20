@@ -1,5 +1,5 @@
 use crate::authentication::delete_all_auth_tokens;
-use crate::error::ApiError;
+use crate::error_warp::ApiError;
 use crate::users::{get_password, user_exists_and_is_active, verify_password, UserCredentials};
 use crate::util::get_cookie_headers;
 use chrono::Duration;
