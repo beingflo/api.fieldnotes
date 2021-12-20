@@ -1,6 +1,6 @@
 mod authentication;
 mod error;
-//mod notes;
+mod notes;
 mod schedule;
 //mod shares;
 mod users;
@@ -16,7 +16,7 @@ use sqlx::postgres::PgPoolOptions;
 use std::{fs::File, net::SocketAddr};
 use axum::{Server, Router, routing::{post, delete, put, get}, AddExtensionLayer};
 
-use crate::users::{signup_handler, login_handler, delete_user_handler, change_password_handler, logout_handler, user_info_handler, invalidate_sessions, store_salt_handler};
+use crate::{users::{signup_handler, login_handler, delete_user_handler, change_password_handler, logout_handler, user_info_handler, invalidate_sessions, store_salt_handler}, notes::list_notes_handler};
 
 #[tokio::main]
 async fn main() {
@@ -62,16 +62,8 @@ async fn main() {
         .route("/user/info", get(user_info_handler))
         .route("/user/salt", put(store_salt_handler))
         .route("/allsessions", delete(invalidate_sessions))
+        .route("/notes", get(list_notes_handler))
         .layer(AddExtensionLayer::new(db));
-
-    //let list_notes = warp::get()
-    //    .and(warp::path("notes"))
-    //    .and(warp::path::end())
-    //    .and(warp::query::query())
-    //    .and(is_authorized_with_user.clone())
-    //    .and(with_db.clone())
-    //    .then(notes::list_notes_handler)
-    //    .and_then(error::handle_errors);
 
     //let get_note = warp::get()
     //    .and(warp::path!("notes" / String))

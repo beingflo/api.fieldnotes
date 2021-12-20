@@ -1,9 +1,11 @@
-use crate::error_warp::ApiError;
+use axum::{Json, response::{IntoResponse, Response}, extract::{Extension, Query}};
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use sqlx::{query, PgPool};
 use std::collections::HashMap;
 use tokio_stream::StreamExt;
+
+use crate::{error::AppError, authentication::AuthenticatedUser};
 
 /// Response to list notes request
 #[derive(Serialize)]
@@ -28,22 +30,22 @@ pub struct ListDeletedNoteResponse {
 
 /// List all non-deleted notes
 pub async fn list_notes_handler(
-    queries: HashMap<String, String>,
-    user_id: i32,
-    db: PgPool,
-) -> Result<impl warp::Reply, ApiError> {
+    Query(queries): Query<HashMap<String, String>>,
+    user: AuthenticatedUser,
+    db: Extension<PgPool>,
+) -> Result<Response, AppError> {
     if queries.get("deleted").is_some() {
-        let notes = list_deleted_notes(user_id, &db).await?;
+        let notes = list_deleted_notes(user.user_id, &db).await?;
 
-        Ok(warp::reply::json(&notes))
+        Ok(Json(notes).into_response())
     } else {
-        let notes = list_notes(user_id, &db).await?;
+        let notes = list_notes(user.user_id, &db).await?;
 
-        Ok(warp::reply::json(&notes))
+        Ok(Json(notes).into_response())
     }
 }
 
-async fn list_notes(user_id: i32, db: &PgPool) -> Result<Vec<ListNoteResponse>, ApiError> {
+async fn list_notes(user_id: i32, db: &PgPool) -> Result<Vec<ListNoteResponse>, AppError> {
     let mut rows = query!(
         "SELECT token, created_at, modified_at, metadata, key
         FROM notes
@@ -70,7 +72,7 @@ async fn list_notes(user_id: i32, db: &PgPool) -> Result<Vec<ListNoteResponse>, 
 async fn list_deleted_notes(
     user_id: i32,
     db: &PgPool,
-) -> Result<Vec<ListDeletedNoteResponse>, ApiError> {
+) -> Result<Vec<ListDeletedNoteResponse>, AppError> {
     let mut rows = query!(
         "SELECT token, created_at, modified_at, deleted_at, metadata, key
         FROM notes
