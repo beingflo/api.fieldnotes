@@ -16,7 +16,7 @@ use sqlx::postgres::PgPoolOptions;
 use std::{fs::File, net::SocketAddr};
 use axum::{Server, Router, routing::{post, delete, put, get}, AddExtensionLayer};
 
-use crate::users::{signup_handler, login_handler, delete_user_handler, change_password_handler, logout_handler, user_info_handler, invalidate_sessions};
+use crate::users::{signup_handler, login_handler, delete_user_handler, change_password_handler, logout_handler, user_info_handler, invalidate_sessions, store_salt_handler};
 
 #[tokio::main]
 async fn main() {
@@ -60,35 +60,9 @@ async fn main() {
         .route("/user", put(change_password_handler))
         .route("/session", delete(logout_handler))
         .route("/user/info", get(user_info_handler))
+        .route("/user/salt", put(store_salt_handler))
         .route("/allsessions", delete(invalidate_sessions))
         .layer(AddExtensionLayer::new(db));
-
-    //let invalidate_all_sessions = warp::delete()
-    //    .and(warp::path("allsessions"))
-    //    .and(warp::path::end())
-    //    .and(warp::body::json())
-    //    .and(is_authorized_with_user.clone())
-    //    .and(with_db.clone())
-    //    .then(users::invalidate_sessions)
-    //    .and_then(error::handle_errors);
-
-    //let store_salt = warp::put()
-    //    .and(warp::path!("user" / "salt"))
-    //    .and(warp::path::end())
-    //    .and(is_authorized_with_user.clone())
-    //    .and(warp::body::json())
-    //    .and(with_db.clone())
-    //    .then(users::store_salt_handler)
-    //    .and_then(error::handle_errors);
-
-    //let user_api = login
-    //    .or(signup)
-    //    .or(logout)
-    //    .or(change_password)
-    //    .or(store_salt)
-    //    .or(delete_user)
-    //    .or(user_info)
-    //    .or(invalidate_all_sessions);
 
     //let list_notes = warp::get()
     //    .and(warp::path("notes"))

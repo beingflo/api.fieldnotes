@@ -51,7 +51,7 @@ pub fn truncate_auth_token(token: &str) -> String {
 }
 
 pub fn get_token_from_header(headers: &HeaderMap) -> Result<String, AppError> {
-    let token = if let Some(cookie) = headers
+    if let Some(cookie) = headers
         .get(http::header::COOKIE)
         .and_then(|value| value.to_str().ok())
         .map(|value| value.to_string())
