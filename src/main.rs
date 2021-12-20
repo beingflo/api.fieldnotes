@@ -14,9 +14,9 @@ use simplelog::{
 };
 use sqlx::postgres::PgPoolOptions;
 use std::{fs::File, net::SocketAddr};
-use axum::{Server, Router, routing::{post, delete, put}, AddExtensionLayer};
+use axum::{Server, Router, routing::{post, delete, put, get}, AddExtensionLayer};
 
-use crate::users::{signup_handler, login_handler, delete_user_handler, change_password_handler, logout_handler};
+use crate::users::{signup_handler, login_handler, delete_user_handler, change_password_handler, logout_handler, user_info_handler};
 
 #[tokio::main]
 async fn main() {
@@ -59,24 +59,8 @@ async fn main() {
         .route("/user", delete(delete_user_handler))
         .route("/user", put(change_password_handler))
         .route("/session", delete(logout_handler))
+        .route("/user/info", get(user_info_handler))
         .layer(AddExtensionLayer::new(db));
-
-    //let logout = warp::delete()
-    //    .and(warp::path("session"))
-    //    .and(warp::path::end())
-    //    .and(is_authorized_with_user.clone())
-    //    .and(with_token)
-    //    .and(with_db.clone())
-    //    .then(users::logout_handler)
-    //    .and_then(error::handle_errors);
-
-    //let user_info = warp::get()
-    //    .and(warp::path!("user" / "info"))
-    //    .and(warp::path::end())
-    //    .and(is_authorized_with_user.clone())
-    //    .and(with_db.clone())
-    //    .then(users::user_info_handler)
-    //    .and_then(error::handle_errors);
 
     //let invalidate_all_sessions = warp::delete()
     //    .and(warp::path("allsessions"))
