@@ -16,7 +16,7 @@ use sqlx::postgres::PgPoolOptions;
 use std::{fs::File, net::SocketAddr};
 use axum::{Server, Router, routing::{post, delete, put, get}, AddExtensionLayer};
 
-use crate::users::{signup_handler, login_handler, delete_user_handler, change_password_handler, logout_handler, user_info_handler};
+use crate::users::{signup_handler, login_handler, delete_user_handler, change_password_handler, logout_handler, user_info_handler, invalidate_sessions};
 
 #[tokio::main]
 async fn main() {
@@ -60,6 +60,7 @@ async fn main() {
         .route("/user", put(change_password_handler))
         .route("/session", delete(logout_handler))
         .route("/user/info", get(user_info_handler))
+        .route("/allsessions", delete(invalidate_sessions))
         .layer(AddExtensionLayer::new(db));
 
     //let invalidate_all_sessions = warp::delete()
