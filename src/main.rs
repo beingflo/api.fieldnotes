@@ -16,7 +16,7 @@ use sqlx::postgres::PgPoolOptions;
 use std::{fs::File, net::SocketAddr};
 use axum::{Server, Router, routing::{post, delete, put}, AddExtensionLayer};
 
-use crate::users::{signup_handler, login_handler, delete_user_handler, change_password_handler};
+use crate::users::{signup_handler, login_handler, delete_user_handler, change_password_handler, logout_handler};
 
 #[tokio::main]
 async fn main() {
@@ -58,16 +58,8 @@ async fn main() {
         .route("/session", post(login_handler))
         .route("/user", delete(delete_user_handler))
         .route("/user", put(change_password_handler))
+        .route("/session", delete(logout_handler))
         .layer(AddExtensionLayer::new(db));
-
-    //let change_password = warp::put()
-    //    .and(warp::path("user"))
-    //    .and(warp::path::end())
-    //    .and(warp::body::json())
-    //    .and(is_authorized_with_user.clone())
-    //    .and(with_db.clone())
-    //    .then(users::change_password_handler)
-    //    .and_then(error::handle_errors);
 
     //let logout = warp::delete()
     //    .and(warp::path("session"))

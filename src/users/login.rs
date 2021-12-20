@@ -1,13 +1,12 @@
 use crate::authentication::{store_auth_token, TOKEN_EXPIRATION_WEEKS};
 use crate::error::AppError;
 use crate::users::{get_password, user_exists_and_is_active, verify_password, UserCredentials};
-use crate::util::{get_auth_token};
-use axum::http::HeaderValue;
+use crate::util::{get_auth_token, get_header_with_token};
 use axum::response::{Response, IntoResponse};
-use axum::{Json, http};
+use axum::{Json};
 use axum::extract::Extension;
 use chrono::{Duration, Utc};
-use hyper::{StatusCode, HeaderMap};
+use hyper::{StatusCode};
 use sqlx::PgPool;
 
 /// Log in existing user, this sets username and token cookies for future requests.
@@ -32,16 +31,7 @@ pub async fn login_handler(
 
     store_auth_token(&user.name, &token, now, &db).await?;
 
-    let cookie = format!(
-        "token={};HttpOnly;Max-Age={}",
-        token,
-        Duration::weeks(TOKEN_EXPIRATION_WEEKS).num_seconds(),
-    );
-
-    let cookie_header = HeaderValue::from_str(&cookie).expect("Cookie value invalid");
-
-    let mut headers = HeaderMap::new();
-    headers.insert(http::header::SET_COOKIE, cookie_header);
+    let headers = get_header_with_token(&token, Duration::weeks(TOKEN_EXPIRATION_WEEKS));
 
     Ok(headers.into_response())
 }

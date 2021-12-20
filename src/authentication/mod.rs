@@ -1,5 +1,5 @@
-use crate::{util::truncate_auth_token, error::AppError};
-use axum::{async_trait, extract::{FromRequest, RequestParts, Extension}, http};
+use crate::{util::{truncate_auth_token, get_token_from_header}, error::AppError};
+use axum::{async_trait, extract::{FromRequest, RequestParts, Extension}};
 use chrono::{DateTime, Duration, Utc};
 use log::info;
 use sqlx::{query, PgPool, Pool, Postgres};
@@ -9,6 +9,7 @@ pub const TOKEN_EXPIRATION_WEEKS: i64 = 8;
 
 pub struct AuthenticatedUser {
     pub user_id: i32,
+    pub auth_token: String,
     pub username: String,
 }
 
@@ -24,23 +25,7 @@ where
             .await
             .expect("db missing");
 
-        let headers = req.headers().expect("other extractor taken headers");
-        println!("{:?}", headers);
-
-        let token = if let Some(cookie) = headers
-            .get(http::header::COOKIE)
-            .and_then(|value| value.to_str().ok())
-            .map(|value| value.to_string())
-        {
-            let mut split = cookie.split("=");
-            split.next();
-            match split.next() {
-                Some(str) => str.into(),
-                None => return Err(AppError::Unauthorized)
-            }
-        } else {
-            return Err(AppError::Unauthorized);
-        };
+        let token = get_token_from_header(req.headers().expect("Header unavailable"))?;
 
         let user = is_authorized_with_user(token, db).await?;
 
@@ -70,7 +55,7 @@ async fn get_auth_token_info(
     db: &PgPool,
 ) -> Result<(AuthenticatedUser, DateTime<Utc>), AppError> {
     match query!(
-        "SELECT users.id, users.username, auth_tokens.created_at
+        "SELECT users.id, users.username, auth_tokens.token, auth_tokens.created_at
         FROM auth_tokens 
         INNER JOIN users ON users.id = auth_tokens.user_id
         WHERE auth_tokens.token = $1;",
@@ -80,7 +65,7 @@ async fn get_auth_token_info(
     .await
     .map_err(|e| AppError::DBError(e))?
     {
-        Some(tok) => Ok((AuthenticatedUser {user_id: tok.id, username: tok.username }, tok.created_at)),
+        Some(tok) => Ok((AuthenticatedUser {user_id: tok.id, auth_token: tok.token, username: tok.username }, tok.created_at)),
         None => Err(AppError::Unauthorized),
     }
 }
