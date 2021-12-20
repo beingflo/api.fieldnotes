@@ -14,15 +14,15 @@ use simplelog::{
 };
 use sqlx::postgres::PgPoolOptions;
 use std::{fs::File, net::SocketAddr};
-use axum::{Server, Router, routing::{post}, AddExtensionLayer};
+use axum::{Server, Router, routing::{post, delete}, AddExtensionLayer};
 
-use crate::users::{signup_handler, login_handler};
+use crate::users::{signup_handler, login_handler, delete_user_handler};
 
 #[tokio::main]
 async fn main() {
     CombinedLogger::init(vec![
         TermLogger::new(
-            LevelFilter::Debug,
+            LevelFilter::Info,
             ConfigBuilder::new()
                 .set_time_format_str("%F %T")
                 .set_time_to_local(true)
@@ -56,16 +56,8 @@ async fn main() {
     let app = Router::new()
         .route("/user", post(signup_handler))
         .route("/session", post(login_handler))
+        .route("/user", delete(delete_user_handler))
         .layer(AddExtensionLayer::new(db));
-
-    //let login = warp::post()
-    //    .and(warp::path("session"))
-    //    .and(warp::path::end())
-    //    .and(warp::body::json())
-    //    .and(with_db.clone())
-    //    .then(users::login_handler)
-    //    .and_then(error::handle_errors);
-
 
     //let change_password = warp::put()
     //    .and(warp::path("user"))
@@ -83,15 +75,6 @@ async fn main() {
     //    .and(with_token)
     //    .and(with_db.clone())
     //    .then(users::logout_handler)
-    //    .and_then(error::handle_errors);
-
-    //let delete_user = warp::delete()
-    //    .and(warp::path("user"))
-    //    .and(warp::path::end())
-    //    .and(warp::body::json())
-    //    .and(is_authorized_with_user.clone())
-    //    .and(with_db.clone())
-    //    .then(users::delete_user_handler)
     //    .and_then(error::handle_errors);
 
     //let user_info = warp::get()

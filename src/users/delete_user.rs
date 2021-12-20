@@ -1,16 +1,16 @@
-use crate::error_warp::ApiError;
-use crate::users::{TransactionEvent, UserCredentials, get_password, user_exists_and_matches_id, verify_password};
+use crate::{users::{TransactionEvent, UserCredentials, get_password, user_exists_and_matches_id, verify_password}, error::AppError, authentication::AuthorizedUser};
+use axum::{Json, extract::Extension};
 use chrono::Utc;
+use hyper::StatusCode;
 use sqlx::{query, PgPool};
-use warp::http::StatusCode;
 
 /// Delete user with all associated data
 pub async fn delete_user_handler(
-    credentials: UserCredentials,
-    user_id: i32,
-    db: PgPool,
-) -> Result<impl warp::Reply, ApiError> {
-    if !user_exists_and_matches_id(&credentials.name, user_id, &db).await? {
+    Json(credentials): Json<UserCredentials>,
+    user: AuthorizedUser,
+    db: Extension<PgPool>,
+) -> Result<StatusCode, AppError> {
+    if !user_exists_and_matches_id(&credentials.name, user.user_id, &db).await? {
         return Ok(StatusCode::UNAUTHORIZED);
     }
 
@@ -21,13 +21,13 @@ pub async fn delete_user_handler(
         true => (),
     }
 
-    delete_all_user_data(user_id, &db).await?;
+    delete_all_user_data(user.user_id, &db).await?;
 
     Ok(StatusCode::OK)
 }
 
 /// Delete all user data
-pub async fn delete_all_user_data(user_id: i32, db: &PgPool) -> Result<(), ApiError> {
+pub async fn delete_all_user_data(user_id: i32, db: &PgPool) -> Result<(), AppError> {
     let mut tx = db.begin().await?;
 
     query!(

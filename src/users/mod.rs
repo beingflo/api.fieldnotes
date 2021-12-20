@@ -1,5 +1,5 @@
 //mod change_password;
-//mod delete_user;
+mod delete_user;
 //mod info;
 //mod invalidate_sessions;
 mod login;
@@ -10,7 +10,7 @@ use chrono::Utc;
 //
 //pub use change_password::change_password_handler;
 //use chrono::Utc;
-//pub use delete_user::delete_user_handler;
+pub use delete_user::delete_user_handler;
 //pub use info::user_info_handler;
 //pub use invalidate_sessions::invalidate_sessions;
 pub use login::login_handler;
