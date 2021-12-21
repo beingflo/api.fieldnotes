@@ -1,7 +1,9 @@
-use crate::error_warp::ApiError;
+use axum::{response::{Response, IntoResponse}, Json, extract::{Path, Extension}};
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use sqlx::{query, PgPool};
+
+use crate::{error::AppError, authentication::AuthenticatedUser};
 
 /// Response to get note request
 #[derive(Serialize)]
@@ -16,16 +18,16 @@ pub struct GetNoteResponse {
 
 /// Get an existing note
 pub async fn get_note_handler(
-    token: String,
-    user_id: i32,
-    db: PgPool,
-) -> Result<impl warp::Reply, ApiError> {
-    let note: GetNoteResponse = get_note(user_id, &token, &db).await?;
+    Path(token): Path<String>,
+    user: AuthenticatedUser,
+    db: Extension<PgPool>,
+) -> Result<Response, AppError> {
+    let note: GetNoteResponse = get_note(user.user_id, &token, &db).await?;
 
-    Ok(warp::reply::json(&note))
+    Ok(Json(&note).into_response())
 }
 
-async fn get_note(user_id: i32, token: &str, db: &PgPool) -> Result<GetNoteResponse, ApiError> {
+async fn get_note(user_id: i32, token: &str, db: &PgPool) -> Result<GetNoteResponse, AppError> {
     match query!(
         "SELECT token, created_at, modified_at, metadata, key, content
         FROM notes
@@ -44,6 +46,6 @@ async fn get_note(user_id: i32, token: &str, db: &PgPool) -> Result<GetNoteRespo
             key: row.key,
             content: row.content,
         }),
-        None => Err(ApiError::Unauthorized),
+        None => Err(AppError::Unauthorized),
     }
 }

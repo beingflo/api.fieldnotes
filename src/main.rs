@@ -16,7 +16,7 @@ use sqlx::postgres::PgPoolOptions;
 use std::{fs::File, net::SocketAddr};
 use axum::{Server, Router, routing::{post, delete, put, get}, AddExtensionLayer};
 
-use crate::{users::{signup_handler, login_handler, delete_user_handler, change_password_handler, logout_handler, user_info_handler, invalidate_sessions, store_salt_handler}, notes::list_notes_handler};
+use crate::{users::{signup_handler, login_handler, delete_user_handler, change_password_handler, logout_handler, user_info_handler, invalidate_sessions, store_salt_handler}, notes::{list_notes_handler, get_note_handler}};
 
 #[tokio::main]
 async fn main() {
@@ -63,15 +63,8 @@ async fn main() {
         .route("/user/salt", put(store_salt_handler))
         .route("/allsessions", delete(invalidate_sessions))
         .route("/notes", get(list_notes_handler))
+        .route("/notes/:token", get(get_note_handler))
         .layer(AddExtensionLayer::new(db));
-
-    //let get_note = warp::get()
-    //    .and(warp::path!("notes" / String))
-    //    .and(warp::path::end())
-    //    .and(is_authorized_with_user.clone())
-    //    .and(with_db.clone())
-    //    .then(notes::get_note_handler)
-    //    .and_then(error::handle_errors);
 
     //let save_note = warp::post()
     //    .and(warp::path("notes"))
