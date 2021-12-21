@@ -7,12 +7,14 @@ mod users;
 mod util;
 
 use dotenv::dotenv;
+use hyper::{Method, header::CONTENT_TYPE};
 use log::{info, LevelFilter};
 use schedule::{notes_deletion_schedule, tokens_deletion_schedule};
 use simplelog::{
     ColorChoice, CombinedLogger, ConfigBuilder, TermLogger, TerminalMode, WriteLogger,
 };
 use sqlx::postgres::PgPoolOptions;
+use tower_http::cors::{CorsLayer, Origin};
 use std::{fs::File, net::SocketAddr};
 use axum::{Server, Router, routing::{post, delete, put, get}, AddExtensionLayer};
 
@@ -53,6 +55,12 @@ async fn main() {
 
     let db = pool.clone();
 
+    let write_origin = dotenv::var("WRITE_APP").expect("WRITE_APP env variable missing").as_str().parse().expect("WRITE_APP env variable malformed");
+    let read_origin = dotenv::var("READ_APP").expect("READ_APP env variable missing").as_str().parse().expect("READ_APP env variable malformed");
+    let read_www_origin = dotenv::var("READ_APP_WWW").expect("READ_APP_WWW env variable missing").as_str().parse().expect("READ_APP_WWW env variable malformed");
+
+    let origins = Origin::list(vec![write_origin, read_origin, read_www_origin]);
+
     let app = Router::new()
         .route("/user", post(signup_handler))
         .route("/session", post(login_handler))
@@ -73,24 +81,12 @@ async fn main() {
         .route("/shares/:token", delete(delete_share_handler))
         .route("/shares/:token", get(access_share_handler))
         .route("/publications/:username", get(list_publications_handler))
-        .layer(AddExtensionLayer::new(db));
-
-    //let cors = warp::cors()
-    //    .allow_origins([
-    //        dotenv::var("WRITE_APP")
-    //            .expect("WRITE_APP env variable missing")
-    //            .as_str(),
-    //        dotenv::var("READ_APP")
-    //            .expect("READ_APP env variable missing")
-    //            .as_str(),
-    //        dotenv::var("READ_APP_WWW")
-    //            .expect("READ_APP_WWW env variable missing")
-    //            .as_str(),
-    //    ])
-    //    .allow_headers(vec!["content-type"])
-    //    .allow_credentials(true)
-    //    .allow_methods(vec!["GET", "POST", "PUT", "DELETE"])
-    //    .build();
+        .layer(AddExtensionLayer::new(db))
+        .layer(CorsLayer::new()
+            .allow_origin(origins)
+            .allow_methods(vec![Method::GET, Method::POST, Method::PUT, Method::DELETE])
+            .allow_credentials(true)
+            .allow_headers(vec![CONTENT_TYPE]));
 
     let listen: SocketAddr = dotenv::var("LISTEN")
         .expect("LISTEN env variable missing")

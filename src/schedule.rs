@@ -6,7 +6,7 @@ use tokio::time::{interval_at, Instant};
 
 pub async fn notes_deletion_schedule(db: PgPool) {
     let mut interval_timer = interval_at(
-        Instant::now() + Duration::minutes(5).to_std().unwrap(),
+        Instant::now() + Duration::minutes(7).to_std().unwrap(),
         Duration::hours(7).to_std().unwrap(),
     );
     loop {
