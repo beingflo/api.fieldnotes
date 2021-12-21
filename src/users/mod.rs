@@ -9,7 +9,6 @@ mod signup;
 use chrono::Utc;
 
 pub use change_password::change_password_handler;
-//use chrono::Utc;
 pub use delete_user::delete_user_handler;
 pub use info::user_info_handler;
 pub use invalidate_sessions::invalidate_sessions;

@@ -1,6 +1,5 @@
 use axum::{response::{Response, IntoResponse}, Json, extract::{Path, Extension}};
 use chrono::{DateTime, Utc};
-use hyper::StatusCode;
 use serde::Serialize;
 use sqlx::{query, PgPool};
 

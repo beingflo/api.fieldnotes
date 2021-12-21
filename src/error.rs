@@ -21,7 +21,7 @@ pub enum AppError {
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let status = match self {
-            AppError::DBError(error) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::DBError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::Conflict => StatusCode::CONFLICT,
             AppError::Unauthorized => StatusCode::UNAUTHORIZED,
             AppError::ViolatedAssertion(_) => StatusCode::INTERNAL_SERVER_ERROR,
