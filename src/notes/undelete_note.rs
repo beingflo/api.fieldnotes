@@ -1,8 +1,10 @@
-use crate::error_warp::ApiError;
+use axum::{response::{Response, IntoResponse}, Json, extract::{Path, Extension}};
 use chrono::{DateTime, Utc};
 use hyper::StatusCode;
 use serde::Serialize;
 use sqlx::{query, PgPool};
+
+use crate::{error::AppError, authentication::AuthenticatedUser};
 
 /// Response to get note request
 #[derive(Serialize)]
@@ -17,21 +19,20 @@ pub struct UndeleteNoteResponse {
 
 /// Undelete an existing note
 pub async fn undelete_note_handler(
-    token: String,
-    user_id: i32,
-    db: PgPool,
-) -> Result<impl warp::Reply, ApiError> {
-    //let note: UndeleteNoteResponse = undelete_note(user_id, &token, &db).await?;
+    Path(token): Path<String>,
+    user: AuthenticatedUser,
+    db: Extension<PgPool>,
+) -> Result<Response, AppError> {
+    let note: UndeleteNoteResponse = undelete_note(user.user_id, &token, &db).await?;
 
-    //Ok(warp::reply::json(&note))
-    Ok(StatusCode::OK)
+    Ok(Json(&note).into_response())
 }
 
 async fn undelete_note(
     user_id: i32,
     token: &str,
     db: &PgPool,
-) -> Result<UndeleteNoteResponse, ApiError> {
+) -> Result<UndeleteNoteResponse, AppError> {
     match query!(
         "UPDATE notes
         SET deleted_at = NULL
@@ -51,6 +52,6 @@ async fn undelete_note(
             key: row.key,
             content: row.content,
         }),
-        None => Err(ApiError::Unauthorized),
+        None => Err(AppError::Unauthorized),
     }
 }
