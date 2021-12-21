@@ -1,7 +1,9 @@
-use crate::error::ApiError;
+use axum::{response::{Response, IntoResponse}, Json, extract::{Path, Extension}};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{query, PgPool};
+
+use crate::{error::AppError, authentication::AuthenticatedUser};
 
 /// Request to save note
 #[derive(Deserialize)]
@@ -20,11 +22,11 @@ pub struct UpdateNoteResponse {
 
 /// Update an existing note
 pub async fn update_note_handler(
-    token: String,
-    user_id: i32,
-    note: UpdateNoteRequest,
-    db: PgPool,
-) -> Result<impl warp::Reply, ApiError> {
+    Path(token): Path<String>,
+    user: AuthenticatedUser,
+    Json(note): Json<UpdateNoteRequest>,
+    db: Extension<PgPool>,
+) -> Result<Response, AppError> {
     let now = Utc::now();
 
     let UpdateNoteRequest {
@@ -33,12 +35,12 @@ pub async fn update_note_handler(
         content,
     } = note;
 
-    update_note(user_id, &token, now, &metadata, &key, &content, &db).await?;
+    update_note(user.user_id, &token, now, &metadata, &key, &content, &db).await?;
 
-    Ok(warp::reply::json(&UpdateNoteResponse {
+    Ok(Json(&UpdateNoteResponse {
         id: token.clone(),
         modified_at: now,
-    }))
+    }).into_response())
 }
 
 async fn update_note(
@@ -49,7 +51,7 @@ async fn update_note(
     key: &str,
     content: &str,
     db: &PgPool,
-) -> Result<(), ApiError> {
+) -> Result<(), AppError> {
     let result = query!(
         "UPDATE notes
         SET modified_at = $1, metadata = $2, key = $3, content = $4
@@ -67,6 +69,6 @@ async fn update_note(
     if result.rows_affected() == 1 {
         Ok(())
     } else {
-        Err(ApiError::Unauthorized)
+        Err(AppError::Unauthorized)
     }
 }

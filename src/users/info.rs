@@ -1,7 +1,7 @@
 use crate::{
-    error::ApiError,
-    users::{get_user_info, BALANCE_SCALE_FACTOR, DAILY_BALANCE_COST},
+    users::{get_user_info, BALANCE_SCALE_FACTOR, DAILY_BALANCE_COST}, error::AppError, authentication::AuthenticatedUser,
 };
+use axum::{extract::Extension, Json};
 use serde::Serialize;
 use sqlx::PgPool;
 
@@ -16,11 +16,11 @@ pub struct UserInfoResponse {
 }
 
 /// Get user info
-pub async fn user_info_handler(user_id: i32, db: PgPool) -> Result<impl warp::Reply, ApiError> {
-    let user_info = get_user_info(user_id, &db).await?;
+pub async fn user_info_handler(user: AuthenticatedUser, db: Extension<PgPool>) -> Result<Json<UserInfoResponse>, AppError> {
+    let user_info = get_user_info(user.user_id, &db).await?;
     let remaining_days = user_info.balance as f64 / DAILY_BALANCE_COST as f64;
 
-    Ok(warp::reply::json(&UserInfoResponse {
+    Ok(Json(UserInfoResponse {
         balance: user_info.balance as f64 / BALANCE_SCALE_FACTOR as f64,
         remaining_days,
         salt: user_info.salt,

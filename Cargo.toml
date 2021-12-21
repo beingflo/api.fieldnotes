@@ -7,6 +7,10 @@ edition = "2021"
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 tokio-stream = "0.1.7"
+hyper = { version = "0.14", features = ["full"] }
+tower = { version = "0.4", featuers= ["http2"] }
+tower-http = { version = "0.2", features = ["full"] }
+axum = { version = "0.4" }
 chrono = { version = "0.4", features = ["serde"] }
 serde = { version = "1.0", features = ["derive"] }
 dotenv = "0.15.0"
@@ -17,7 +21,6 @@ bcrypt = "0.8"
 rand = "0.8"
 lazy_static = "1.4.0"
 ring = "0.16.19"
-warp = { version = "0.3.2" }
 sqlx = { version = "0.5", features = [ "runtime-tokio-rustls", "postgres", "macros", "migrate", "uuid", "chrono", "json", "offline" ] }
 thiserror = "1.0"
 

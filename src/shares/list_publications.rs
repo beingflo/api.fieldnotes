@@ -1,4 +1,5 @@
-use crate::{error::ApiError, shares::KeyJson};
+use crate::{shares::KeyJson, error::AppError};
+use axum::{response::{Response, IntoResponse}, Json, extract::{Path, Extension}};
 use chrono::{DateTime, Utc};
 use log::warn;
 use serde::Serialize;
@@ -19,26 +20,26 @@ pub struct ListPublicationResponse {
 
 /// List published notes
 pub async fn list_publications_handler(
-    username: String,
-    db: PgPool,
-) -> Result<impl warp::Reply, ApiError> {
+    Path(username): Path<String>,
+    db: Extension<PgPool>,
+) -> Result<Response, AppError> {
     if !user_exists_and_is_active(&username, &db).await? {
-        return Err(ApiError::NotFound);
+        return Err(AppError::NotFound);
     }
 
-    let shares = list_publications(username, &db).await?;
+    let shares = list_publications(&username, &db).await?;
 
     if shares.len() == 0 {
-        return Err(ApiError::NotFound);
+        return Err(AppError::NotFound);
     }
 
-    Ok(warp::reply::json(&shares))
+    Ok(Json(&shares).into_response())
 }
 
 async fn list_publications(
-    username: String,
+    username: &str,
     db: &PgPool,
-) -> Result<Vec<ListPublicationResponse>, ApiError> {
+) -> Result<Vec<ListPublicationResponse>, AppError> {
     let mut rows = query!(
         "SELECT shares.token, notes.created_at, notes.modified_at, notes.metadata, notes.key, shares.public
         FROM shares 

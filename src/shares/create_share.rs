@@ -1,5 +1,5 @@
-use crate::error::ApiError;
-use crate::util::get_share_token;
+use crate::{util::get_share_token, error::AppError, authentication::AuthenticatedUser};
+use axum::{response::{Response, IntoResponse}, Json, extract::Extension};
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{query, PgPool};
@@ -24,10 +24,10 @@ pub struct CreateShareResponse {
 
 /// Create a new share from an existing note
 pub async fn create_share_handler(
-    user_id: i32,
-    request: CreateShareRequest,
-    db: PgPool,
-) -> Result<impl warp::Reply, ApiError> {
+    user: AuthenticatedUser,
+    Json(request): Json<CreateShareRequest>,
+    db: Extension<PgPool>,
+) -> Result<Response, AppError> {
     let now = Utc::now();
     let token = get_share_token();
 
@@ -41,12 +41,13 @@ pub async fn create_share_handler(
     };
 
     if share_exists(&request.note, &db).await? {
-        return Err(ApiError::Conflict.into());
+        return Err(AppError::Conflict.into());
     }
+
     create_share(
         &token,
         &request.note,
-        user_id,
+        user.user_id,
         &request.public,
         now,
         expires_at,
@@ -54,13 +55,13 @@ pub async fn create_share_handler(
     )
     .await?;
 
-    Ok(warp::reply::json(&CreateShareResponse {
+    Ok(Json(&CreateShareResponse {
         token,
         created_at: now,
         expires_at,
         note: request.note,
         public: request.public,
-    }))
+    }).into_response())
 }
 
 async fn create_share(
@@ -71,7 +72,7 @@ async fn create_share(
     created_at: DateTime<Utc>,
     expires_at: Option<DateTime<Utc>>,
     db: &PgPool,
-) -> Result<(), ApiError> {
+) -> Result<(), AppError> {
     let row = query!(
         "INSERT INTO shares (token, note_id, user_id, created_at, expires_at, view_count, public)
         SELECT $1, id, $3, $4, $5, $6, $7
@@ -90,11 +91,11 @@ async fn create_share(
     if row.rows_affected() == 1 {
         Ok(())
     } else {
-        Err(ApiError::Unauthorized)
+        Err(AppError::Unauthorized)
     }
 }
 
-async fn share_exists(note_token: &str, db: &PgPool) -> Result<bool, ApiError> {
+async fn share_exists(note_token: &str, db: &PgPool) -> Result<bool, AppError> {
     match query!(
         "SELECT shares.id
         FROM shares 

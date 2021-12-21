@@ -10,10 +10,11 @@ pub use delete_share::delete_share_handler;
 pub use list_publications::list_publications_handler;
 pub use list_shares::list_shares_handler;
 
-use crate::error::ApiError;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use sqlx::{query, PgPool};
+
+use crate::error::AppError;
 
 /// Key type
 #[derive(Deserialize)]
@@ -22,7 +23,7 @@ pub struct KeyJson {
     iv_content: String,
 }
 
-async fn get_share_expiration(token: &str, db: &PgPool) -> Result<Option<DateTime<Utc>>, ApiError> {
+async fn get_share_expiration(token: &str, db: &PgPool) -> Result<Option<DateTime<Utc>>, AppError> {
     match query!(
         "SELECT expires_at
         FROM shares 
@@ -33,6 +34,6 @@ async fn get_share_expiration(token: &str, db: &PgPool) -> Result<Option<DateTim
     .await?
     {
         Some(row) => Ok(row.expires_at),
-        None => Err(ApiError::Unauthorized),
+        None => Err(AppError::Unauthorized),
     }
 }

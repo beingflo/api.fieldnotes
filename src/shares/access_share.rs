@@ -1,4 +1,5 @@
-use crate::{error::ApiError, shares::get_share_expiration, shares::KeyJson};
+use crate::{shares::get_share_expiration, shares::KeyJson, error::AppError};
+use axum::{response::{Response, IntoResponse}, Json, extract::{Path, Extension}};
 use chrono::{DateTime, Utc};
 use log::error;
 use serde::Serialize;
@@ -13,23 +14,23 @@ pub struct AccessShareResponse {
     iv: String,
 }
 
-pub async fn access_share_handler(token: String, db: PgPool) -> Result<impl warp::Reply, ApiError> {
+pub async fn access_share_handler(Path(token): Path<String>, db: Extension<PgPool>) -> Result<Response, AppError> {
     let expires_at = get_share_expiration(&token, &db).await?;
 
     let now = Utc::now();
 
     if let Some(expires) = expires_at {
         if expires < now {
-            return Err(ApiError::Unauthorized);
+            return Err(AppError::Unauthorized);
         }
     }
 
     let note = access_share(&token, &db).await?;
 
-    Ok(warp::reply::json(&note))
+    Ok(Json(&note).into_response())
 }
 
-async fn access_share(token: &str, db: &PgPool) -> Result<AccessShareResponse, ApiError> {
+async fn access_share(token: &str, db: &PgPool) -> Result<AccessShareResponse, AppError> {
     query!(
         "UPDATE shares
         SET view_count = view_count + 1
@@ -54,7 +55,7 @@ async fn access_share(token: &str, db: &PgPool) -> Result<AccessShareResponse, A
                 Ok(key) => key,
                 Err(err) => {
                     error!("Serde error: {:?}", err);
-                    return Err(ApiError::ViolatedAssertion(
+                    return Err(AppError::ViolatedAssertion(
                         "Key field not serializable".to_string(),
                     ))
                 }
@@ -67,6 +68,6 @@ async fn access_share(token: &str, db: &PgPool) -> Result<AccessShareResponse, A
                 iv: key.iv_content,
             })
         }
-        None => Err(ApiError::Unauthorized),
+        None => Err(AppError::Unauthorized),
     }
 }

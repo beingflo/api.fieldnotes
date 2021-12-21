@@ -1,19 +1,21 @@
-use crate::error::ApiError;
+use axum::{response::{Response, IntoResponse}, extract::{Path, Extension}};
 use chrono::{DateTime, Utc};
+use hyper::StatusCode;
 use sqlx::{query, PgPool};
-use warp::http::StatusCode;
+
+use crate::{error::AppError, authentication::AuthenticatedUser};
 
 /// Delete an existing note
 pub async fn delete_note_handler(
-    token: String,
-    user_id: i32,
-    db: PgPool,
-) -> Result<impl warp::Reply, ApiError> {
+    Path(token): Path<String>,
+    user: AuthenticatedUser,
+    db: Extension<PgPool>,
+) -> Result<Response, AppError> {
     let now = Utc::now();
 
-    delete_note(user_id, &token, now, &db).await?;
+    delete_note(user.user_id, &token, now, &db).await?;
 
-    Ok(StatusCode::OK)
+    Ok(StatusCode::OK.into_response())
 }
 
 async fn delete_note(
@@ -21,7 +23,7 @@ async fn delete_note(
     token: &str,
     deleted_at: DateTime<Utc>,
     db: &PgPool,
-) -> Result<(), ApiError> {
+) -> Result<(), AppError> {
     let mut tx = db.begin().await?;
 
     let result = query!(
@@ -55,6 +57,6 @@ async fn delete_note(
         Ok(())
     } else {
         tx.rollback().await?;
-        Err(ApiError::Unauthorized)
+        Err(AppError::Unauthorized)
     }
 }

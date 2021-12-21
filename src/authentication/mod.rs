@@ -1,25 +1,51 @@
-use crate::{error::ApiError, util::trucate_auth_token};
+use crate::{util::{truncate_auth_token, get_token_from_header}, error::AppError};
+use axum::{async_trait, extract::{FromRequest, RequestParts, Extension}};
 use chrono::{DateTime, Duration, Utc};
 use log::info;
-use sqlx::{query, PgPool};
-use warp::reject;
+use sqlx::{query, PgPool, Pool, Postgres};
 
 /// Token expiration time: 2 months
 pub const TOKEN_EXPIRATION_WEEKS: i64 = 8;
 
-/// Checks if user has proper authorization token for request and return user id
-/// used in further filters and handlers.
-pub async fn is_authorized_with_user(token: String, db: PgPool) -> Result<i32, warp::Rejection> {
-    let (user_id, created_at) = get_auth_token_info(&token, &db).await?;
+pub struct AuthenticatedUser {
+    pub user_id: i32,
+    pub auth_token: String,
+    pub username: String,
+}
+
+#[async_trait]
+impl<B> FromRequest<B> for AuthenticatedUser 
+where
+    B: Send,
+{
+    type Rejection = AppError;
+
+    async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
+        let Extension(db) = Extension::<Pool<Postgres>>::from_request(req)
+            .await
+            .expect("db missing");
+
+        let token = get_token_from_header(req.headers().expect("Header unavailable"))?;
+
+        let user = is_authorized_with_user(token, db).await?;
+
+        Ok(user)
+    }
+}
+
+// Checks if user has proper authorization token for request and return user id
+// used in further filters and handlers.
+pub async fn is_authorized_with_user(token: String, db: PgPool) -> Result<AuthenticatedUser, AppError> {
+    let (authorized_user, created_at) = get_auth_token_info(&token, &db).await?;
 
     let now = Utc::now();
 
-    info!("Access with token: {}", trucate_auth_token(&token));
+    info!("Access with token: {}", truncate_auth_token(&token));
 
     if created_at + Duration::weeks(TOKEN_EXPIRATION_WEEKS) > now {
-        Ok(user_id)
+        Ok(authorized_user)
     } else {
-        Err(warp::reject::custom(ApiError::Unauthorized))
+        Err(AppError::Unauthorized)
     }
 }
 
@@ -27,19 +53,20 @@ pub async fn is_authorized_with_user(token: String, db: PgPool) -> Result<i32, w
 async fn get_auth_token_info(
     token: &str,
     db: &PgPool,
-) -> Result<(i32, DateTime<Utc>), warp::Rejection> {
+) -> Result<(AuthenticatedUser, DateTime<Utc>), AppError> {
     match query!(
-        "SELECT user_id, created_at
+        "SELECT users.id, users.username, auth_tokens.token, auth_tokens.created_at
         FROM auth_tokens 
-        WHERE token = $1",
+        INNER JOIN users ON users.id = auth_tokens.user_id
+        WHERE auth_tokens.token = $1;",
         token
     )
     .fetch_optional(db)
     .await
-    .map_err(|e| reject::custom(ApiError::DBError(e)))?
+    .map_err(|e| AppError::DBError(e))?
     {
-        Some(tok) => Ok((tok.user_id, tok.created_at)),
-        None => Err(warp::reject::custom(ApiError::Unauthorized)),
+        Some(tok) => Ok((AuthenticatedUser {user_id: tok.id, auth_token: tok.token, username: tok.username }, tok.created_at)),
+        None => Err(AppError::Unauthorized),
     }
 }
 
@@ -49,7 +76,7 @@ pub async fn store_auth_token(
     token: &str,
     created_at: DateTime<Utc>,
     db: &PgPool,
-) -> Result<(), ApiError> {
+) -> Result<(), AppError> {
     query!(
         "INSERT INTO auth_tokens (token, created_at, user_id)
         VALUES ($1, $2, (SELECT id FROM users WHERE username=$3));",
@@ -64,7 +91,7 @@ pub async fn store_auth_token(
 }
 
 // Delete provided auth token from db
-pub async fn delete_auth_token(token: &str, db: &PgPool) -> Result<(), ApiError> {
+pub async fn delete_auth_token(token: &str, db: &PgPool) -> Result<(), AppError> {
     query!(
         "DELETE
         FROM auth_tokens 
@@ -78,7 +105,7 @@ pub async fn delete_auth_token(token: &str, db: &PgPool) -> Result<(), ApiError>
 }
 
 // Delete all auth tokens of user from db
-pub async fn delete_all_auth_tokens(user_id: i32, db: &PgPool) -> Result<(), ApiError> {
+pub async fn delete_all_auth_tokens(user_id: i32, db: &PgPool) -> Result<(), AppError> {
     query!(
         "DELETE
         FROM auth_tokens 

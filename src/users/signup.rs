@@ -1,10 +1,10 @@
-use crate::error::ApiError;
-use crate::users::{user_exists, TransactionEvent, BCRYPT_COST};
+use crate::{users::{user_exists, TransactionEvent, BCRYPT_COST}, error::AppError};
+use axum::{Json, extract::Extension};
 use bcrypt::hash;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use sqlx::{query, PgPool};
-use warp::http::StatusCode;
+use axum::http::StatusCode;
 
 /// This request form is expected for signupg calls.
 #[derive(Deserialize)]
@@ -16,9 +16,9 @@ pub struct SignupCredentials {
 
 /// Sign up new user. This stores the user data in the db.
 pub async fn signup_handler(
-    user: SignupCredentials,
-    db: PgPool,
-) -> Result<impl warp::Reply, ApiError> {
+    Json(user): Json<SignupCredentials>,
+    db: Extension<PgPool>,
+) -> Result<StatusCode, AppError> {
     if user_exists(&user.name, &db).await? {
         return Ok(StatusCode::CONFLICT);
     }
@@ -44,7 +44,7 @@ async fn store_user(
     email: Option<String>,
     time: DateTime<Utc>,
     db: &PgPool,
-) -> Result<(), ApiError> {
+) -> Result<(), AppError> {
     let mut tx = db.begin().await?;
 
     let result = query!(
