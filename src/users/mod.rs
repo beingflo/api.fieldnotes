@@ -148,79 +148,8 @@ async fn get_user_info(user_id: i32, db: &PgPool) -> Result<UserInfo, AppError> 
 }
 
 async fn user_exists(name: &str, db: &PgPool) -> Result<bool, AppError> {
-  let result = query!(
-      "SELECT COUNT(id)
-      FROM users 
-      WHERE username = $1;",
-      name
-  )
-  .fetch_one(db)
-  .await;
-
-  match result {
-      Ok(row) => {
-          if let Some(0) = row.count {
-              Ok(false)
-          } else {
-              Ok(true)
-          }
-      }
-      Err(error) => Err(AppError::DBError(error)),
-  }
-}
-
-
-pub async fn user_exists_and_is_active(name: &str, db: &PgPool) -> Result<bool, AppError> {
-    let result = query!(
+    let row = query!(
         "SELECT COUNT(id)
-        FROM users 
-        WHERE username = $1 AND deleted_at IS NULL;",
-        name
-    )
-    .fetch_one(db)
-    .await;
-
-    match result {
-        Ok(row) => {
-            if let Some(0) = row.count {
-                Ok(false)
-            } else {
-                Ok(true)
-            }
-        }
-        Err(error) => Err(AppError::DBError(error)),
-    }
-}
-
-async fn user_exists_and_matches_id(
-    name: &str,
-    user_id: i32,
-    db: &PgPool,
-) -> Result<bool, AppError> {
-    match query!(
-        "SELECT id
-        FROM users 
-        WHERE username = $1 AND deleted_at IS NULL;",
-        name
-    )
-    .fetch_optional(db)
-    .await?
-    {
-        Some(row) => {
-            if row.id == user_id {
-                Ok(true)
-            } else {
-                Ok(false)
-            }
-        }
-        None => Err(AppError::Unauthorized),
-    }
-}
-
-/// Retrieve stored password hash for existing user.
-pub async fn get_password(name: &str, db: &PgPool) -> Result<String, AppError> {
-    let result = query!(
-        "SELECT password
         FROM users 
         WHERE username = $1;",
         name
@@ -228,7 +157,81 @@ pub async fn get_password(name: &str, db: &PgPool) -> Result<String, AppError> {
     .fetch_one(db)
     .await?;
 
+    if let Some(0) = row.count {
+        Ok(false)
+    } else {
+        Ok(true)
+    }
+}
+
+
+pub async fn user_exists_and_is_active(name: &str, db: &PgPool) -> Result<bool, AppError> {
+    let row = query!(
+        "SELECT COUNT(id)
+        FROM users 
+        WHERE username = $1 AND deleted_at IS NULL;",
+        name
+    )
+    .fetch_one(db)
+    .await?;
+
+    if let Some(0) = row.count {
+        Ok(false)
+    } else {
+        Ok(true)
+    }
+}
+
+pub async fn validate_user_with_credentials(
+    username: &str,
+    user_id: i32,
+    credential_name: &str,
+    credential_password: &str,
+    db: &PgPool,
+) -> Result<bool, AppError> {
+    if credential_name != username {
+        return Ok(false);
+    }
+
+    if !user_exists_and_is_active(credential_name, &db).await? {
+        return Ok(false);
+    }
+
+    let password = get_password(user_id, &db).await?;
+
+    if !verify_password(credential_password, &password).await? {
+        return Ok(false);
+    }
+
+    Ok(true)
+}
+
+/// Retrieve stored password hash for existing user.
+pub async fn get_password(id: i32, db: &PgPool) -> Result<String, AppError> {
+    let result = query!(
+        "SELECT password
+        FROM users 
+        WHERE id = $1;",
+        id
+    )
+    .fetch_one(db)
+    .await?;
+
     Ok(result.password)
+}
+
+/// Retrieve stored password hash for existing user.
+pub async fn get_user_id(name: &str, db: &PgPool) -> Result<i32, AppError> {
+    let result = query!(
+        "SELECT id
+        FROM users 
+        WHERE username = $1;",
+        name
+    )
+    .fetch_one(db)
+    .await?;
+
+    Ok(result.id)
 }
 
 /// Verify supplied password for user.

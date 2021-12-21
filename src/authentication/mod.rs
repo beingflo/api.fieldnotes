@@ -62,8 +62,7 @@ async fn get_auth_token_info(
         token
     )
     .fetch_optional(db)
-    .await
-    .map_err(|e| AppError::DBError(e))?
+    .await?
     {
         Some(tok) => Ok((AuthenticatedUser {user_id: tok.id, auth_token: tok.token, username: tok.username }, tok.created_at)),
         None => Err(AppError::Unauthorized),
