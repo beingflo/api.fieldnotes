@@ -1,8 +1,14 @@
-use crate::{users::{TransactionEvent, UserCredentials, get_password, user_exists_and_matches_id, verify_password}, error::AppError, authentication::AuthenticatedUser};
-use axum::{Json, extract::Extension};
+use crate::{
+    authentication::AuthenticatedUser,
+    error::AppError,
+    users::{TransactionEvent, UserCredentials},
+};
+use axum::{extract::Extension, Json};
 use chrono::Utc;
 use hyper::StatusCode;
 use sqlx::{query, PgPool};
+
+use super::validate_user_with_credentials;
 
 /// Delete user with all associated data
 pub async fn delete_user_handler(
@@ -10,15 +16,16 @@ pub async fn delete_user_handler(
     user: AuthenticatedUser,
     db: Extension<PgPool>,
 ) -> Result<StatusCode, AppError> {
-    if !user_exists_and_matches_id(&credentials.name, user.user_id, &db).await? {
+    if !validate_user_with_credentials(
+        &user.username,
+        user.user_id,
+        &credentials.name,
+        &credentials.password,
+        &db,
+    )
+    .await?
+    {
         return Ok(StatusCode::UNAUTHORIZED);
-    }
-
-    let password = get_password(&credentials.name, &db).await?;
-
-    match verify_password(&credentials.password, &password).await? {
-        false => return Ok(StatusCode::UNAUTHORIZED),
-        true => (),
     }
 
     delete_all_user_data(user.user_id, &db).await?;

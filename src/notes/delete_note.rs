@@ -1,9 +1,12 @@
-use axum::{response::{Response, IntoResponse}, extract::{Path, Extension}};
+use axum::{
+    extract::{Extension, Path},
+    response::{IntoResponse, Response},
+};
 use chrono::{DateTime, Utc};
 use hyper::StatusCode;
 use sqlx::{query, PgPool};
 
-use crate::{error::AppError, authentication::AuthenticatedUser};
+use crate::{authentication::AuthenticatedUser, error::AppError};
 
 /// Delete an existing note
 pub async fn delete_note_handler(

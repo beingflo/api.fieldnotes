@@ -1,10 +1,14 @@
-use axum::{response::{Response, IntoResponse}, Json, extract::Extension};
+use axum::{
+    extract::Extension,
+    response::{IntoResponse, Response},
+    Json,
+};
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use sqlx::{query, PgPool};
 use tokio_stream::StreamExt;
 
-use crate::{error::AppError, authentication::AuthenticatedUser};
+use crate::{authentication::AuthenticatedUser, error::AppError};
 
 /// List shares response
 #[derive(Serialize)]
@@ -18,7 +22,10 @@ pub struct ListShareResponse {
 }
 
 /// List existing shares
-pub async fn list_shares_handler(user: AuthenticatedUser, db: Extension<PgPool>) -> Result<Response, AppError> {
+pub async fn list_shares_handler(
+    user: AuthenticatedUser,
+    db: Extension<PgPool>,
+) -> Result<Response, AppError> {
     let shares = list_shares(user.user_id, &db).await?;
 
     Ok(Json(shares).into_response())

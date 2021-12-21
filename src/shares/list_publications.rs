@@ -1,11 +1,15 @@
-use crate::{shares::KeyJson, error::AppError};
-use axum::{response::{Response, IntoResponse}, Json, extract::{Path, Extension}};
+use crate::users::user_exists_and_is_active;
+use crate::{error::AppError, shares::KeyJson};
+use axum::{
+    extract::{Extension, Path},
+    response::{IntoResponse, Response},
+    Json,
+};
 use chrono::{DateTime, Utc};
 use log::warn;
 use serde::Serialize;
 use sqlx::{query, PgPool};
 use tokio_stream::StreamExt;
-use crate::users::user_exists_and_is_active;
 
 /// List publications response
 #[derive(Serialize)]
@@ -57,7 +61,7 @@ async fn list_publications(
             Ok(key) => key,
             Err(err) => {
                 warn!("Serde error: {:?}", err);
-                continue
+                continue;
             }
         };
 

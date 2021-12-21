@@ -1,5 +1,12 @@
-use crate::{authentication::{delete_auth_token, AuthenticatedUser}, error::AppError, util::get_header_with_token};
-use axum::{response::{Response, IntoResponse}, extract::Extension};
+use crate::{
+    authentication::{delete_auth_token, AuthenticatedUser},
+    error::AppError,
+    util::get_header_with_token,
+};
+use axum::{
+    extract::Extension,
+    response::{IntoResponse, Response},
+};
 use chrono::Duration;
 use sqlx::PgPool;
 

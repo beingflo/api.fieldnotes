@@ -1,9 +1,11 @@
-use crate::{users::{get_password, user_exists_and_matches_id, verify_password, BCRYPT_COST}, error::AppError, authentication::{AuthenticatedUser}};
-use axum::{Json, extract::Extension};
+use crate::{authentication::AuthenticatedUser, error::AppError, users::BCRYPT_COST};
+use axum::{extract::Extension, Json};
 use bcrypt::hash;
 use hyper::StatusCode;
 use serde::Deserialize;
 use sqlx::{query, PgPool};
+
+use super::validate_user_with_credentials;
 
 /// This request form is expected for changing password
 #[derive(Deserialize)]
@@ -19,15 +21,16 @@ pub async fn change_password_handler(
     user: AuthenticatedUser,
     db: Extension<PgPool>,
 ) -> Result<StatusCode, AppError> {
-    if !user_exists_and_matches_id(&credentials.name, user.user_id, &db).await? {
+    if !validate_user_with_credentials(
+        &user.username,
+        user.user_id,
+        &credentials.name,
+        &credentials.password,
+        &db,
+    )
+    .await?
+    {
         return Ok(StatusCode::UNAUTHORIZED);
-    }
-
-    let password = get_password(&credentials.name, &db).await?;
-
-    match verify_password(&credentials.password, &password).await? {
-        false => return Ok(StatusCode::UNAUTHORIZED),
-        true => (),
     }
 
     let hashed_password = hash(credentials.password_new, BCRYPT_COST);

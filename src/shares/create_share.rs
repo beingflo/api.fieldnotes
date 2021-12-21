@@ -1,5 +1,9 @@
-use crate::{util::get_share_token, error::AppError, authentication::AuthenticatedUser};
-use axum::{response::{Response, IntoResponse}, Json, extract::Extension};
+use crate::{authentication::AuthenticatedFundedUser, error::AppError, util::get_share_token};
+use axum::{
+    extract::Extension,
+    response::{IntoResponse, Response},
+    Json,
+};
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{query, PgPool};
@@ -24,7 +28,7 @@ pub struct CreateShareResponse {
 
 /// Create a new share from an existing note
 pub async fn create_share_handler(
-    user: AuthenticatedUser,
+    user: AuthenticatedFundedUser,
     Json(request): Json<CreateShareRequest>,
     db: Extension<PgPool>,
 ) -> Result<Response, AppError> {
@@ -61,7 +65,8 @@ pub async fn create_share_handler(
         expires_at,
         note: request.note,
         public: request.public,
-    }).into_response())
+    })
+    .into_response())
 }
 
 async fn create_share(

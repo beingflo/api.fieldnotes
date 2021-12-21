@@ -1,8 +1,11 @@
-use axum::{response::{IntoResponse, Response}, extract::{Extension, Path}};
+use axum::{
+    extract::{Extension, Path},
+    response::{IntoResponse, Response},
+};
 use hyper::StatusCode;
 use sqlx::{query, PgPool};
 
-use crate::{error::AppError, authentication::AuthenticatedUser};
+use crate::{authentication::AuthenticatedUser, error::AppError};
 
 pub async fn delete_share_handler(
     Path(token): Path<String>,

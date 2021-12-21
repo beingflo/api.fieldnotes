@@ -8,7 +8,7 @@ edition = "2021"
 tokio = { version = "1", features = ["full"] }
 tokio-stream = "0.1.7"
 hyper = { version = "0.14", features = ["full"] }
-tower = { version = "0.4", featuers= ["http2"] }
+tower = { version = "0.4", features = ["full"] }
 tower-http = { version = "0.2", features = ["full"] }
 axum = { version = "0.4" }
 chrono = { version = "0.4", features = ["serde"] }

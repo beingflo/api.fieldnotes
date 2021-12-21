@@ -1,9 +1,13 @@
-use axum::{response::{Response, IntoResponse}, Json, extract::{Path, Extension}};
+use axum::{
+    extract::{Extension, Path},
+    response::{IntoResponse, Response},
+    Json,
+};
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use sqlx::{query, PgPool};
 
-use crate::{error::AppError, authentication::AuthenticatedUser};
+use crate::{authentication::AuthenticatedUser, error::AppError};
 
 /// Response to get note request
 #[derive(Serialize)]
