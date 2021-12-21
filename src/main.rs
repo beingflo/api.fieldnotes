@@ -16,7 +16,7 @@ use sqlx::postgres::PgPoolOptions;
 use std::{fs::File, net::SocketAddr};
 use axum::{Server, Router, routing::{post, delete, put, get}, AddExtensionLayer};
 
-use crate::{users::{signup_handler, login_handler, delete_user_handler, change_password_handler, logout_handler, user_info_handler, invalidate_sessions, store_salt_handler}, notes::{list_notes_handler, get_note_handler, save_note_handler}};
+use crate::{users::{signup_handler, login_handler, delete_user_handler, change_password_handler, logout_handler, user_info_handler, invalidate_sessions, store_salt_handler}, notes::{list_notes_handler, get_note_handler, save_note_handler, update_note_handler}};
 
 #[tokio::main]
 async fn main() {
@@ -65,17 +65,8 @@ async fn main() {
         .route("/notes", get(list_notes_handler))
         .route("/notes/:token", get(get_note_handler))
         .route("/notes", post(save_note_handler))
+        .route("/notes/:token", put(update_note_handler))
         .layer(AddExtensionLayer::new(db));
-
-    //let save_note = warp::post()
-    //    .and(warp::path("notes"))
-    //    .and(warp::path::end())
-    //    .and(is_authorized_with_user.clone())
-    //    .and(is_funded.clone())
-    //    .and(warp::body::json())
-    //    .and(with_db.clone())
-    //    .then(notes::save_note_handler)
-    //    .and_then(error::handle_errors);
 
     //let update_note = warp::put()
     //    .and(warp::path!("notes" / String))
