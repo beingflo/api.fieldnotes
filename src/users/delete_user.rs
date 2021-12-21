@@ -15,6 +15,7 @@ pub async fn delete_user_handler(
     if !validate_user_with_credentials(&user.username, user.user_id, &credentials.name, &credentials.password, &db).await? {
         return Ok(StatusCode::UNAUTHORIZED);
     }
+
     delete_all_user_data(user.user_id, &db).await?;
 
     Ok(StatusCode::OK)
