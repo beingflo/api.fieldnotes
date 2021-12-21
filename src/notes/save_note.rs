@@ -1,5 +1,5 @@
-use crate::error_warp::ApiError;
-use crate::util::get_note_token;
+use crate::{util::get_note_token, error::AppError, authentication::AuthenticatedUser};
+use axum::{Json, response::{IntoResponse, Response}, extract::Extension};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{query, PgPool};
@@ -22,10 +22,10 @@ pub struct SaveNoteResponse {
 
 /// Save a new note
 pub async fn save_note_handler(
-    user_id: i32,
-    note: SaveNoteRequest,
-    db: PgPool,
-) -> Result<impl warp::Reply, ApiError> {
+    user: AuthenticatedUser,
+    Json(note): Json<SaveNoteRequest>,
+    db: Extension<PgPool>,
+) -> Result<Response, AppError> {
     let now = Utc::now();
     let token = get_note_token();
 
@@ -35,13 +35,13 @@ pub async fn save_note_handler(
         content,
     } = note;
 
-    save_note(user_id, &token, now, now, &metadata, &key, &content, &db).await?;
+    save_note(user.user_id, &token, now, now, &metadata, &key, &content, &db).await?;
 
-    Ok(warp::reply::json(&SaveNoteResponse {
+    Ok(Json(&SaveNoteResponse {
         id: token.clone(),
         modified_at: now,
         created_at: now,
-    }))
+    }).into_response())
 }
 
 async fn save_note(
@@ -53,7 +53,7 @@ async fn save_note(
     key: &str,
     content: &str,
     db: &PgPool,
-) -> Result<(), ApiError> {
+) -> Result<(), AppError> {
     query!(
         "INSERT INTO notes (token, user_id, created_at, modified_at, metadata, key, content)
         VALUES ($1, $2, $3, $4, $5, $6, $7);",
