@@ -55,32 +55,6 @@
       "nullable": []
     }
   },
-  "335bc20ca72eac3d3aa4642a4d248cffb32df877bb2238f4af533dfe25109ca3": {
-    "query": "SELECT user_id, created_at\n        FROM auth_tokens \n        WHERE token = $1",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "user_id",
-          "type_info": "Int4"
-        },
-        {
-          "ordinal": 1,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      },
-      "nullable": [
-        false,
-        false
-      ]
-    }
-  },
   "3a4eb031d9a5f0f8dbd1d821961bb5e01d07383ec0cedb30d5061435b7cd700a": {
     "query": "DELETE\n        FROM notes\n        WHERE user_id = $1;",
     "describe": {
@@ -374,6 +348,26 @@
       ]
     }
   },
+  "68e6b292309861809ca3f663bc2fb3cb6d3b8328ca0bd7cc65f73539df1ca7f4": {
+    "query": "SELECT COUNT(id)\n      FROM users \n      WHERE username = $1;",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "count",
+          "type_info": "Int8"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      },
+      "nullable": [
+        null
+      ]
+    }
+  },
   "69431f01c79fa386441be079b7b1d0144e3481e84534de0f2dca6ac64822d0fa": {
     "query": "DELETE \n        FROM shares \n        WHERE note_id = (\n            SELECT id\n            FROM notes\n            WHERE token = $1 AND user_id = $2\n        ) AND user_id = $2;",
     "describe": {
@@ -635,14 +629,29 @@
       ]
     }
   },
-  "af6387740d5397347f10d38c5c78cb0d3b8cb1b9c00dbfda41394d40d7f9a116": {
-    "query": "SELECT COUNT(id)\n        FROM users \n        WHERE username = $1;",
+  "b4078a395e675567e0d4d832a96dce74352ee1850729c58247bcbe26cce1f1ca": {
+    "query": "SELECT users.id, users.username, auth_tokens.token, auth_tokens.created_at\n        FROM auth_tokens \n        INNER JOIN users ON users.id = auth_tokens.user_id\n        WHERE auth_tokens.token = $1;",
     "describe": {
       "columns": [
         {
           "ordinal": 0,
-          "name": "count",
-          "type_info": "Int8"
+          "name": "id",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 1,
+          "name": "username",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "token",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "created_at",
+          "type_info": "Timestamptz"
         }
       ],
       "parameters": {
@@ -651,7 +660,10 @@
         ]
       },
       "nullable": [
-        null
+        false,
+        false,
+        false,
+        false
       ]
     }
   },
