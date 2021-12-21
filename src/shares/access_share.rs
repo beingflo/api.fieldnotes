@@ -1,5 +1,9 @@
-use crate::{shares::get_share_expiration, shares::KeyJson, error::AppError};
-use axum::{response::{Response, IntoResponse}, Json, extract::{Path, Extension}};
+use crate::{error::AppError, shares::get_share_expiration, shares::KeyJson};
+use axum::{
+    extract::{Extension, Path},
+    response::{IntoResponse, Response},
+    Json,
+};
 use chrono::{DateTime, Utc};
 use log::error;
 use serde::Serialize;
@@ -14,7 +18,10 @@ pub struct AccessShareResponse {
     iv: String,
 }
 
-pub async fn access_share_handler(Path(token): Path<String>, db: Extension<PgPool>) -> Result<Response, AppError> {
+pub async fn access_share_handler(
+    Path(token): Path<String>,
+    db: Extension<PgPool>,
+) -> Result<Response, AppError> {
     let expires_at = get_share_expiration(&token, &db).await?;
 
     let now = Utc::now();
@@ -57,7 +64,7 @@ async fn access_share(token: &str, db: &PgPool) -> Result<AccessShareResponse, A
                     error!("Serde error: {:?}", err);
                     return Err(AppError::ViolatedAssertion(
                         "Key field not serializable".to_string(),
-                    ))
+                    ));
                 }
             };
 

@@ -1,5 +1,5 @@
-use crate::{users::BCRYPT_COST, error::AppError, authentication::{AuthenticatedUser}};
-use axum::{Json, extract::Extension};
+use crate::{authentication::AuthenticatedUser, error::AppError, users::BCRYPT_COST};
+use axum::{extract::Extension, Json};
 use bcrypt::hash;
 use hyper::StatusCode;
 use serde::Deserialize;
@@ -21,7 +21,15 @@ pub async fn change_password_handler(
     user: AuthenticatedUser,
     db: Extension<PgPool>,
 ) -> Result<StatusCode, AppError> {
-    if !validate_user_with_credentials(&user.username, user.user_id, &credentials.name, &credentials.password, &db).await? {
+    if !validate_user_with_credentials(
+        &user.username,
+        user.user_id,
+        &credentials.name,
+        &credentials.password,
+        &db,
+    )
+    .await?
+    {
         return Ok(StatusCode::UNAUTHORIZED);
     }
 

@@ -2,9 +2,9 @@ use crate::authentication::{delete_all_auth_tokens, AuthenticatedUser};
 use crate::error::AppError;
 use crate::users::UserCredentials;
 use crate::util::get_header_with_token;
-use axum::Json;
 use axum::extract::Extension;
-use axum::response::{Response, IntoResponse};
+use axum::response::{IntoResponse, Response};
+use axum::Json;
 use chrono::Duration;
 use hyper::StatusCode;
 use sqlx::PgPool;
@@ -17,7 +17,15 @@ pub async fn invalidate_sessions(
     user: AuthenticatedUser,
     db: Extension<PgPool>,
 ) -> Result<Response, AppError> {
-    if !validate_user_with_credentials(&user.username, user.user_id, &credentials.name, &credentials.password, &db).await? {
+    if !validate_user_with_credentials(
+        &user.username,
+        user.user_id,
+        &credentials.name,
+        &credentials.password,
+        &db,
+    )
+    .await?
+    {
         return Ok(StatusCode::UNAUTHORIZED.into_response());
     }
 

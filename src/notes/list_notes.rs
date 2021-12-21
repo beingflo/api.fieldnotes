@@ -1,11 +1,15 @@
-use axum::{Json, response::{IntoResponse, Response}, extract::{Extension, Query}};
+use axum::{
+    extract::{Extension, Query},
+    response::{IntoResponse, Response},
+    Json,
+};
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use sqlx::{query, PgPool};
 use std::collections::HashMap;
 use tokio_stream::StreamExt;
 
-use crate::{error::AppError, authentication::AuthenticatedUser};
+use crate::{authentication::AuthenticatedUser, error::AppError};
 
 /// Response to list notes request
 #[derive(Serialize)]

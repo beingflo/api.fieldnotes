@@ -1,9 +1,9 @@
-use axum::{Json, extract::Extension};
+use axum::{extract::Extension, Json};
 use hyper::StatusCode;
 use serde::Deserialize;
 use sqlx::{query, PgPool};
 
-use crate::{error::AppError, authentication::AuthenticatedUser};
+use crate::{authentication::AuthenticatedUser, error::AppError};
 
 /// This request form is expected for storing salt
 #[derive(Deserialize)]

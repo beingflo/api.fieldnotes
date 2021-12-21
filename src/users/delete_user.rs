@@ -1,5 +1,9 @@
-use crate::{users::{TransactionEvent, UserCredentials}, error::AppError, authentication::AuthenticatedUser};
-use axum::{Json, extract::Extension};
+use crate::{
+    authentication::AuthenticatedUser,
+    error::AppError,
+    users::{TransactionEvent, UserCredentials},
+};
+use axum::{extract::Extension, Json};
 use chrono::Utc;
 use hyper::StatusCode;
 use sqlx::{query, PgPool};
@@ -12,7 +16,15 @@ pub async fn delete_user_handler(
     user: AuthenticatedUser,
     db: Extension<PgPool>,
 ) -> Result<StatusCode, AppError> {
-    if !validate_user_with_credentials(&user.username, user.user_id, &credentials.name, &credentials.password, &db).await? {
+    if !validate_user_with_credentials(
+        &user.username,
+        user.user_id,
+        &credentials.name,
+        &credentials.password,
+        &db,
+    )
+    .await?
+    {
         return Ok(StatusCode::UNAUTHORIZED);
     }
 

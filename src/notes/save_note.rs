@@ -1,5 +1,9 @@
-use crate::{util::get_note_token, error::AppError, authentication::AuthenticatedUser};
-use axum::{Json, response::{IntoResponse, Response}, extract::Extension};
+use crate::{authentication::AuthenticatedUser, error::AppError, util::get_note_token};
+use axum::{
+    extract::Extension,
+    response::{IntoResponse, Response},
+    Json,
+};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{query, PgPool};
@@ -35,13 +39,24 @@ pub async fn save_note_handler(
         content,
     } = note;
 
-    save_note(user.user_id, &token, now, now, &metadata, &key, &content, &db).await?;
+    save_note(
+        user.user_id,
+        &token,
+        now,
+        now,
+        &metadata,
+        &key,
+        &content,
+        &db,
+    )
+    .await?;
 
     Ok(Json(&SaveNoteResponse {
         id: token.clone(),
         modified_at: now,
         created_at: now,
-    }).into_response())
+    })
+    .into_response())
 }
 
 async fn save_note(

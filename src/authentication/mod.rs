@@ -1,5 +1,11 @@
-use crate::{util::{truncate_auth_token, get_token_from_header}, error::AppError};
-use axum::{async_trait, extract::{FromRequest, RequestParts, Extension}};
+use crate::{
+    error::AppError,
+    util::{get_token_from_header, truncate_auth_token},
+};
+use axum::{
+    async_trait,
+    extract::{Extension, FromRequest, RequestParts},
+};
 use chrono::{DateTime, Duration, Utc};
 use log::info;
 use sqlx::{query, PgPool, Pool, Postgres};
@@ -14,7 +20,7 @@ pub struct AuthenticatedUser {
 }
 
 #[async_trait]
-impl<B> FromRequest<B> for AuthenticatedUser 
+impl<B> FromRequest<B> for AuthenticatedUser
 where
     B: Send,
 {
@@ -35,7 +41,10 @@ where
 
 // Checks if user has proper authorization token for request and return user id
 // used in further filters and handlers.
-pub async fn is_authorized_with_user(token: String, db: PgPool) -> Result<AuthenticatedUser, AppError> {
+pub async fn is_authorized_with_user(
+    token: String,
+    db: PgPool,
+) -> Result<AuthenticatedUser, AppError> {
     let (authorized_user, created_at) = get_auth_token_info(&token, &db).await?;
 
     let now = Utc::now();
@@ -64,7 +73,14 @@ async fn get_auth_token_info(
     .fetch_optional(db)
     .await?
     {
-        Some(tok) => Ok((AuthenticatedUser {user_id: tok.id, auth_token: tok.token, username: tok.username }, tok.created_at)),
+        Some(tok) => Ok((
+            AuthenticatedUser {
+                user_id: tok.id,
+                auth_token: tok.token,
+                username: tok.username,
+            },
+            tok.created_at,
+        )),
         None => Err(AppError::Unauthorized),
     }
 }

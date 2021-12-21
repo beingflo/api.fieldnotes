@@ -60,7 +60,7 @@ pub fn get_token_from_header(headers: &HeaderMap) -> Result<String, AppError> {
         split.next();
         match split.next() {
             Some(str) => return Ok(str.into()),
-            None => return Err(AppError::Unauthorized)
+            None => return Err(AppError::Unauthorized),
         }
     } else {
         return Err(AppError::Unauthorized);

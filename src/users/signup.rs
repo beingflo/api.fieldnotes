@@ -1,10 +1,13 @@
-use crate::{users::{user_exists, TransactionEvent, BCRYPT_COST}, error::AppError};
-use axum::{Json, extract::Extension};
+use crate::{
+    error::AppError,
+    users::{user_exists, TransactionEvent, BCRYPT_COST},
+};
+use axum::http::StatusCode;
+use axum::{extract::Extension, Json};
 use bcrypt::hash;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use sqlx::{query, PgPool};
-use axum::http::StatusCode;
 
 /// This request form is expected for signupg calls.
 #[derive(Deserialize)]

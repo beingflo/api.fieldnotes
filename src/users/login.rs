@@ -2,11 +2,11 @@ use crate::authentication::{store_auth_token, TOKEN_EXPIRATION_WEEKS};
 use crate::error::AppError;
 use crate::users::{get_password, user_exists_and_is_active, verify_password, UserCredentials};
 use crate::util::{get_auth_token, get_header_with_token};
-use axum::response::{Response, IntoResponse};
-use axum::{Json};
 use axum::extract::Extension;
+use axum::response::{IntoResponse, Response};
+use axum::Json;
 use chrono::{Duration, Utc};
-use hyper::{StatusCode};
+use hyper::StatusCode;
 use sqlx::PgPool;
 
 use super::get_user_id;

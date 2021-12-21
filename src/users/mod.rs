@@ -164,7 +164,6 @@ async fn user_exists(name: &str, db: &PgPool) -> Result<bool, AppError> {
     }
 }
 
-
 pub async fn user_exists_and_is_active(name: &str, db: &PgPool) -> Result<bool, AppError> {
     let row = query!(
         "SELECT COUNT(id)
