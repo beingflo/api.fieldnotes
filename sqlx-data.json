@@ -79,6 +79,26 @@
       "nullable": []
     }
   },
+  "406cd54a12d31daed70cfdb28e4a5327dd1984c2726edcfd78d61080a5cb9f5b": {
+    "query": "SELECT password\n        FROM users \n        WHERE id = $1;",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "password",
+          "type_info": "Text"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      },
+      "nullable": [
+        false
+      ]
+    }
+  },
   "4ba3c91696ad6fe337e3084f6e4b843137491ae3c1706b2c657f6c49db679883": {
     "query": "SELECT expires_at\n        FROM shares \n        WHERE token= $1",
     "describe": {
@@ -348,26 +368,6 @@
       ]
     }
   },
-  "68e6b292309861809ca3f663bc2fb3cb6d3b8328ca0bd7cc65f73539df1ca7f4": {
-    "query": "SELECT COUNT(id)\n      FROM users \n      WHERE username = $1;",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "count",
-          "type_info": "Int8"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      },
-      "nullable": [
-        null
-      ]
-    }
-  },
   "69431f01c79fa386441be079b7b1d0144e3481e84534de0f2dca6ac64822d0fa": {
     "query": "DELETE \n        FROM shares \n        WHERE note_id = (\n            SELECT id\n            FROM notes\n            WHERE token = $1 AND user_id = $2\n        ) AND user_id = $2;",
     "describe": {
@@ -475,6 +475,26 @@
         ]
       },
       "nullable": []
+    }
+  },
+  "89d15af651e2e913adb2ed6eea8c2dc2ef6741bd62654caab74738fc8d2a4dc7": {
+    "query": "SELECT id\n        FROM users \n        WHERE username = $1;",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Int4"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      },
+      "nullable": [
+        false
+      ]
     }
   },
   "8e3444d146d07235cd7625f7ace08d2534b6fc58cf204e3f811180342077ff47": {
@@ -609,14 +629,14 @@
       ]
     }
   },
-  "ac434077f1e6cc7981b8e1860ec851f90f7daee48999e402b0e100d9a5b57346": {
-    "query": "SELECT password\n        FROM users \n        WHERE username = $1;",
+  "af6387740d5397347f10d38c5c78cb0d3b8cb1b9c00dbfda41394d40d7f9a116": {
+    "query": "SELECT COUNT(id)\n        FROM users \n        WHERE username = $1;",
     "describe": {
       "columns": [
         {
           "ordinal": 0,
-          "name": "password",
-          "type_info": "Text"
+          "name": "count",
+          "type_info": "Int8"
         }
       ],
       "parameters": {
@@ -625,7 +645,7 @@
         ]
       },
       "nullable": [
-        false
+        null
       ]
     }
   },
@@ -663,26 +683,6 @@
         false,
         false,
         false,
-        false
-      ]
-    }
-  },
-  "be0263e6d715da53fe006d35aa43b324d6cdbe97556f573edc6f70619fd8a935": {
-    "query": "SELECT id\n        FROM users \n        WHERE username = $1 AND deleted_at IS NULL;",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Int4"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      },
-      "nullable": [
         false
       ]
     }
