@@ -1,4 +1,4 @@
-use crate::{authentication::AuthenticatedUser, error::AppError, util::get_note_token};
+use crate::{authentication::AuthenticatedFundedUser, error::AppError, util::get_note_token};
 use axum::{
     extract::Extension,
     response::{IntoResponse, Response},
@@ -26,7 +26,7 @@ pub struct SaveNoteResponse {
 
 /// Save a new note
 pub async fn save_note_handler(
-    user: AuthenticatedUser,
+    user: AuthenticatedFundedUser,
     Json(note): Json<SaveNoteRequest>,
     db: Extension<PgPool>,
 ) -> Result<Response, AppError> {

@@ -7,7 +7,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{query, PgPool};
 
-use crate::{authentication::AuthenticatedUser, error::AppError};
+use crate::{authentication::AuthenticatedFundedUser, error::AppError};
 
 /// Request to save note
 #[derive(Deserialize)]
@@ -27,7 +27,7 @@ pub struct UpdateNoteResponse {
 /// Update an existing note
 pub async fn update_note_handler(
     Path(token): Path<String>,
-    user: AuthenticatedUser,
+    user: AuthenticatedFundedUser,
     Json(note): Json<UpdateNoteRequest>,
     db: Extension<PgPool>,
 ) -> Result<Response, AppError> {
