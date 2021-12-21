@@ -1,5 +1,6 @@
 use crate::{
     error::AppError,
+    users::is_funded,
     util::{get_token_from_header, truncate_auth_token},
 };
 use axum::{
@@ -13,6 +14,37 @@ use sqlx::{query, PgPool, Pool, Postgres};
 /// Token expiration time: 2 months
 pub const TOKEN_EXPIRATION_WEEKS: i64 = 8;
 
+pub struct AuthenticatedFundedUser {
+    pub user_id: i32,
+    pub auth_token: String,
+    pub username: String,
+}
+
+#[async_trait]
+impl<B> FromRequest<B> for AuthenticatedFundedUser
+where
+    B: Send,
+{
+    type Rejection = AppError;
+
+    async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
+        let Extension(db) = Extension::<Pool<Postgres>>::from_request(req)
+            .await
+            .expect("db missing");
+
+        let token = get_token_from_header(req.headers().expect("Header unavailable"))?;
+
+        let user = is_authorized_with_user(token, &db).await?;
+
+        is_funded(user.user_id, &db).await?;
+
+        Ok(AuthenticatedFundedUser {
+            user_id: user.user_id,
+            auth_token: user.auth_token,
+            username: user.username,
+        })
+    }
+}
 pub struct AuthenticatedUser {
     pub user_id: i32,
     pub auth_token: String,
@@ -33,7 +65,7 @@ where
 
         let token = get_token_from_header(req.headers().expect("Header unavailable"))?;
 
-        let user = is_authorized_with_user(token, db).await?;
+        let user = is_authorized_with_user(token, &db).await?;
 
         Ok(user)
     }
@@ -43,7 +75,7 @@ where
 // used in further filters and handlers.
 pub async fn is_authorized_with_user(
     token: String,
-    db: PgPool,
+    db: &PgPool,
 ) -> Result<AuthenticatedUser, AppError> {
     let (authorized_user, created_at) = get_auth_token_info(&token, &db).await?;
 

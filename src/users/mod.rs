@@ -64,15 +64,15 @@ enum TransactionEvent {
     AddFunds,
 }
 
-//pub async fn is_funded(user_id: i32, db: PgPool) -> Result<(), warp::Rejection> {
-//    let user_info = get_user_info(user_id, &db).await?;
-//
-//    if user_info.balance > FUNDED_BALANCE {
-//        Ok(())
-//    } else {
-//        Err(warp::reject::custom(ApiError::Underfunded))
-//    }
-//}
+pub async fn is_funded(user_id: i32, db: &PgPool) -> Result<(), AppError> {
+    let user_info = get_user_info(user_id, &db).await?;
+
+    if user_info.balance > FUNDED_BALANCE {
+        Ok(())
+    } else {
+        Err(AppError::Underfunded)
+    }
+}
 
 async fn get_user_info(user_id: i32, db: &PgPool) -> Result<UserInfo, AppError> {
     let info = query!(
