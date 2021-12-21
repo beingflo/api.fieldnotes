@@ -1,12 +1,12 @@
-//mod access_share;
+mod access_share;
 mod create_share;
-//mod delete_share;
+mod delete_share;
 //mod list_publications;
 mod list_shares;
 
-//pub use access_share::access_share_handler;
+pub use access_share::access_share_handler;
 pub use create_share::create_share_handler;
-//pub use delete_share::delete_share_handler;
+pub use delete_share::delete_share_handler;
 //pub use list_publications::list_publications_handler;
 pub use list_shares::list_shares_handler;
 

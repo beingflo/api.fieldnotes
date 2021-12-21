@@ -1,18 +1,20 @@
-use crate::error_warp::ApiError;
+use axum::{response::{IntoResponse, Response}, extract::{Extension, Path}};
+use hyper::StatusCode;
 use sqlx::{query, PgPool};
-use warp::http::StatusCode;
+
+use crate::{error::AppError, authentication::AuthenticatedUser};
 
 pub async fn delete_share_handler(
-    token: String,
-    user_id: i32,
-    db: PgPool,
-) -> Result<impl warp::Reply, ApiError> {
-    delete_share(user_id, &token, &db).await?;
+    Path(token): Path<String>,
+    user: AuthenticatedUser,
+    db: Extension<PgPool>,
+) -> Result<Response, AppError> {
+    delete_share(user.user_id, &token, &db).await?;
 
-    Ok(StatusCode::OK)
+    Ok(StatusCode::OK.into_response())
 }
 
-async fn delete_share(user_id: i32, token: &str, db: &PgPool) -> Result<(), ApiError> {
+async fn delete_share(user_id: i32, token: &str, db: &PgPool) -> Result<(), AppError> {
     let row = query!(
         "DELETE
         FROM shares
@@ -26,6 +28,6 @@ async fn delete_share(user_id: i32, token: &str, db: &PgPool) -> Result<(), ApiE
     if row.rows_affected() == 1 {
         Ok(())
     } else {
-        Err(ApiError::Unauthorized)
+        Err(AppError::Unauthorized)
     }
 }
