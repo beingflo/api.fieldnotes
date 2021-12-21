@@ -9,6 +9,6 @@ RUN cargo build --release
 FROM rust:1.57.0-slim AS runtime
 WORKDIR /app
 # Copy the compiled binary from the builder environment # to our runtime environment
-COPY --from=builder /app/target/debug/fieldnotes-api fieldnotes-api
+COPY --from=builder /app/target/release/fieldnotes-api fieldnotes-api
 COPY .env .env
 ENTRYPOINT ["./fieldnotes-api"]
