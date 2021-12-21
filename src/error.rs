@@ -11,6 +11,9 @@ pub enum AppError {
     #[error("Conflict")]
     Conflict,
 
+    #[error("NotFound")]
+    NotFound,
+
     #[error("Unauthorized")]
     Unauthorized,
 
@@ -23,6 +26,7 @@ impl IntoResponse for AppError {
         let status = match self {
             AppError::DBError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::Conflict => StatusCode::CONFLICT,
+            AppError::NotFound => StatusCode::NOT_FOUND,
             AppError::Unauthorized => StatusCode::UNAUTHORIZED,
             AppError::ViolatedAssertion(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
