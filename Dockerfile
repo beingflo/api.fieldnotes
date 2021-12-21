@@ -3,7 +3,7 @@ FROM rust:1.57.0 AS builder
 WORKDIR /app
 COPY . .
 ENV SQLX_OFFLINE true
-RUN cargo build
+RUN cargo build --release
 
 # Runtime stage
 FROM rust:1.57.0-slim AS runtime
