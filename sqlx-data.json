@@ -1,5 +1,18 @@
 {
   "db": "PostgreSQL",
+  "01e9354541d3f0aa9a4f3ef9e7af073c9c568e59e7b244627342247961e637be": {
+    "query": "UPDATE users \n        SET salt = $1\n        WHERE id = $2 AND salt IS NULL",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Int4"
+        ]
+      },
+      "nullable": []
+    }
+  },
   "106f692729b36e279529968ab94443dc1c27337b42a530255dabe7df2dc4326a": {
     "query": "UPDATE shares\n        SET view_count = view_count + 1\n        WHERE shares.token = $1;",
     "describe": {
@@ -387,19 +400,6 @@
       "columns": [],
       "parameters": {
         "Left": [
-          "Int4"
-        ]
-      },
-      "nullable": []
-    }
-  },
-  "706fc02e127300fcb6752ba7d9cc8564160b25f9cee960935f76f9f7a602dbb2": {
-    "query": "UPDATE users \n        SET salt = $1\n        WHERE id = $2",
-    "describe": {
-      "columns": [],
-      "parameters": {
-        "Left": [
-          "Text",
           "Int4"
         ]
       },
