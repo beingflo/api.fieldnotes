@@ -27,7 +27,7 @@ async fn store_salt(user_id: i32, salt: &str, db: &PgPool) -> Result<(), AppErro
     let result = query!(
         "UPDATE users 
         SET salt = $1
-        WHERE id = $2",
+        WHERE id = $2 AND salt IS NULL",
         salt,
         user_id,
     )
@@ -37,8 +37,6 @@ async fn store_salt(user_id: i32, salt: &str, db: &PgPool) -> Result<(), AppErro
     if result.rows_affected() == 1 {
         Ok(())
     } else {
-        Err(AppError::ViolatedAssertion(
-            "No rows affected when storing salt".to_string(),
-        ))
+        Err(AppError::Conflict)
     }
 }
