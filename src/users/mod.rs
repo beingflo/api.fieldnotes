@@ -164,6 +164,16 @@ async fn user_exists(name: &str, db: &PgPool) -> Result<bool, AppError> {
     }
 }
 
+fn username_valid(name: &str) -> bool {
+    let forbidden = ";/?:@&=+$,#*[]{}|";
+
+    if name.chars().all(|c| !forbidden.contains(c)) {
+        true
+    } else {
+        false
+    }
+}
+
 pub async fn user_exists_and_is_active(name: &str, db: &PgPool) -> Result<bool, AppError> {
     let row = query!(
         "SELECT COUNT(id)
