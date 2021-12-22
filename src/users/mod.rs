@@ -165,7 +165,7 @@ async fn user_exists(name: &str, db: &PgPool) -> Result<bool, AppError> {
 }
 
 fn username_valid(name: &str) -> bool {
-    let forbidden = ";/?:@&=+$,#*[]{}|";
+    let forbidden = ";/?:@&=+$,#*[]{}()^|";
 
     if name.chars().all(|c| !forbidden.contains(c)) {
         true
