@@ -406,6 +406,26 @@
       "nullable": []
     }
   },
+  "73386b1f507adc6b988543def8a56c822e82847ad88658b8374487b21ae4d6e3": {
+    "query": "SELECT COUNT(id)\n        FROM users \n        WHERE lower(username) = lower($1);",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "count",
+          "type_info": "Int8"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      },
+      "nullable": [
+        null
+      ]
+    }
+  },
   "7940b693621fadacd924cc50942c3bf0923c9ebc8ffd868844b17647446c8904": {
     "query": "UPDATE users\n        SET deleted_at = $1\n        WHERE id = $2;",
     "describe": {
@@ -626,26 +646,6 @@
         false,
         false,
         false
-      ]
-    }
-  },
-  "af6387740d5397347f10d38c5c78cb0d3b8cb1b9c00dbfda41394d40d7f9a116": {
-    "query": "SELECT COUNT(id)\n        FROM users \n        WHERE username = $1;",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "count",
-          "type_info": "Int8"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      },
-      "nullable": [
-        null
       ]
     }
   },

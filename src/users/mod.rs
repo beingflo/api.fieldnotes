@@ -151,7 +151,7 @@ async fn user_exists(name: &str, db: &PgPool) -> Result<bool, AppError> {
     let row = query!(
         "SELECT COUNT(id)
         FROM users 
-        WHERE username = $1;",
+        WHERE lower(username) = lower($1);",
         name
     )
     .fetch_one(db)
