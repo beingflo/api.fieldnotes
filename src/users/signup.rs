@@ -29,7 +29,7 @@ pub async fn signup_handler(
     }
 
     if !username_valid(&user.name) {
-        return Ok(StatusCode::BAD_REQUEST);
+        return Ok(StatusCode::UNPROCESSABLE_ENTITY);
     }
 
     let hashed_password = hash(user.password, BCRYPT_COST);
