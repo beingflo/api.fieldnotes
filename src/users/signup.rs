@@ -9,6 +9,8 @@ use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use sqlx::{query, PgPool};
 
+use super::username_valid;
+
 /// This request form is expected for signupg calls.
 #[derive(Deserialize)]
 pub struct SignupCredentials {
@@ -24,6 +26,10 @@ pub async fn signup_handler(
 ) -> Result<StatusCode, AppError> {
     if user_exists(&user.name, &db).await? {
         return Ok(StatusCode::CONFLICT);
+    }
+
+    if !username_valid(&user.name) {
+        return Ok(StatusCode::UNPROCESSABLE_ENTITY);
     }
 
     let hashed_password = hash(user.password, BCRYPT_COST);

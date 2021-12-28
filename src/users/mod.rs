@@ -151,7 +151,7 @@ async fn user_exists(name: &str, db: &PgPool) -> Result<bool, AppError> {
     let row = query!(
         "SELECT COUNT(id)
         FROM users 
-        WHERE username = $1;",
+        WHERE lower(username) = lower($1);",
         name
     )
     .fetch_one(db)
@@ -161,6 +161,16 @@ async fn user_exists(name: &str, db: &PgPool) -> Result<bool, AppError> {
         Ok(false)
     } else {
         Ok(true)
+    }
+}
+
+fn username_valid(name: &str) -> bool {
+    let forbidden = ";/?:@&=+$,#*[]{}()^|";
+
+    if name.chars().all(|c| !forbidden.contains(c)) {
+        true
+    } else {
+        false
     }
 }
 

@@ -1,5 +1,18 @@
 {
   "db": "PostgreSQL",
+  "01e9354541d3f0aa9a4f3ef9e7af073c9c568e59e7b244627342247961e637be": {
+    "query": "UPDATE users \n        SET salt = $1\n        WHERE id = $2 AND salt IS NULL",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Int4"
+        ]
+      },
+      "nullable": []
+    }
+  },
   "106f692729b36e279529968ab94443dc1c27337b42a530255dabe7df2dc4326a": {
     "query": "UPDATE shares\n        SET view_count = view_count + 1\n        WHERE shares.token = $1;",
     "describe": {
@@ -393,17 +406,24 @@
       "nullable": []
     }
   },
-  "706fc02e127300fcb6752ba7d9cc8564160b25f9cee960935f76f9f7a602dbb2": {
-    "query": "UPDATE users \n        SET salt = $1\n        WHERE id = $2",
+  "73386b1f507adc6b988543def8a56c822e82847ad88658b8374487b21ae4d6e3": {
+    "query": "SELECT COUNT(id)\n        FROM users \n        WHERE lower(username) = lower($1);",
     "describe": {
-      "columns": [],
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "count",
+          "type_info": "Int8"
+        }
+      ],
       "parameters": {
         "Left": [
-          "Text",
-          "Int4"
+          "Text"
         ]
       },
-      "nullable": []
+      "nullable": [
+        null
+      ]
     }
   },
   "7940b693621fadacd924cc50942c3bf0923c9ebc8ffd868844b17647446c8904": {
@@ -626,26 +646,6 @@
         false,
         false,
         false
-      ]
-    }
-  },
-  "af6387740d5397347f10d38c5c78cb0d3b8cb1b9c00dbfda41394d40d7f9a116": {
-    "query": "SELECT COUNT(id)\n        FROM users \n        WHERE username = $1;",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "count",
-          "type_info": "Int8"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      },
-      "nullable": [
-        null
       ]
     }
   },
