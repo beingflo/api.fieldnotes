@@ -69,7 +69,7 @@ pub fn get_token_from_header(headers: &HeaderMap) -> Result<String, AppError> {
 
 pub fn get_header_with_token(token: &str, duration: Duration) -> HeaderMap {
     let cookie = format!(
-        "token={};HttpOnly;Max-Age={}",
+        "token={};HttpOnly;Secure;SameSite=Strict;Max-Age={}",
         token,
         duration.num_seconds()
     );
