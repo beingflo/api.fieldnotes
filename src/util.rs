@@ -68,9 +68,12 @@ pub fn get_token_from_header(headers: &HeaderMap) -> Result<String, AppError> {
 }
 
 pub fn get_header_with_token(token: &str, duration: Duration) -> HeaderMap {
+    let domain = &dotenv::var("WRITE_APP_HOST").expect("WRITE_APP_HOST env variable missing");
+
     let cookie = format!(
-        "token={};HttpOnly;Secure;SameSite=Strict;Max-Age={}",
+        "token={};HttpOnly;Secure;SameSite=Strict;Domain={};Max-Age={}",
         token,
+        domain,
         duration.num_seconds()
     );
 
