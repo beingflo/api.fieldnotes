@@ -64,7 +64,7 @@ async fn main() {
     dotenv().ok();
 
     let pool = PgPoolOptions::new()
-        .max_connections(20)
+        .max_connections(100)
         .connect(&dotenv::var("DATABASE_URL").expect("DATABASE_URL env variable missing"))
         .await
         .expect("DB connection failed");
