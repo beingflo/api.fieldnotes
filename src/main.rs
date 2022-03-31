@@ -8,7 +8,7 @@ mod util;
 
 use axum::{
     routing::{delete, get, post, put},
-    AddExtensionLayer, Router, Server,
+    Extension, Router, Server,
 };
 use dotenv::dotenv;
 use hyper::{header::CONTENT_TYPE, Method};
@@ -109,7 +109,7 @@ async fn main() {
         .route("/shares/:token", delete(delete_share_handler))
         .route("/shares/:token", get(access_share_handler))
         .route("/publications/:username", get(list_publications_handler))
-        .layer(AddExtensionLayer::new(db))
+        .layer(Extension(db))
         .layer(
             CorsLayer::new()
                 .allow_origin(origins)

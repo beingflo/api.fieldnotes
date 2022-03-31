@@ -32,7 +32,7 @@ where
             .await
             .expect("db missing");
 
-        let token = get_token_from_header(req.headers().expect("Header unavailable"))?;
+        let token = get_token_from_header(req.headers())?;
 
         let user = is_authorized_with_user(token, &db).await?;
 
@@ -63,7 +63,7 @@ where
             .await
             .expect("db missing");
 
-        let token = get_token_from_header(req.headers().expect("Header unavailable"))?;
+        let token = get_token_from_header(req.headers())?;
 
         let user = is_authorized_with_user(token, &db).await?;
 
