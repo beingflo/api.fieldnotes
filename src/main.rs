@@ -14,11 +14,9 @@ use dotenv::dotenv;
 use hyper::{header::CONTENT_TYPE, Method};
 use log::{info, LevelFilter};
 use schedule::{notes_deletion_schedule, tokens_deletion_schedule};
-use simplelog::{
-    ColorChoice, CombinedLogger, ConfigBuilder, TermLogger, TerminalMode, WriteLogger,
-};
+use simplelog::{ColorChoice, CombinedLogger, ConfigBuilder, TermLogger, TerminalMode};
 use sqlx::postgres::PgPoolOptions;
-use std::{fs::File, net::SocketAddr};
+use std::net::SocketAddr;
 use tower_http::cors::{CorsLayer, Origin};
 
 use crate::{
@@ -38,25 +36,15 @@ use crate::{
 
 #[tokio::main]
 async fn main() {
-    CombinedLogger::init(vec![
-        TermLogger::new(
-            LevelFilter::Info,
-            ConfigBuilder::new()
-                .set_time_format_str("%F %T")
-                .set_time_to_local(true)
-                .build(),
-            TerminalMode::Mixed,
-            ColorChoice::Auto,
-        ),
-        WriteLogger::new(
-            LevelFilter::Info,
-            ConfigBuilder::new()
-                .set_time_format_str("%F %T")
-                .set_time_to_local(true)
-                .build(),
-            File::create("fieldnotes.log").unwrap(),
-        ),
-    ])
+    CombinedLogger::init(vec![TermLogger::new(
+        LevelFilter::Warn,
+        ConfigBuilder::new()
+            .set_time_format_str("%F %T")
+            .set_time_to_local(true)
+            .build(),
+        TerminalMode::Mixed,
+        ColorChoice::Auto,
+    )])
     .unwrap();
 
     info!("Server started");
