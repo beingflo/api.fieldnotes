@@ -65,7 +65,7 @@ enum TransactionEvent {
 }
 
 pub async fn is_funded(user_id: i32, db: &PgPool) -> Result<(), AppError> {
-    let user_info = get_user_info(user_id, &db).await?;
+    let user_info = get_user_info(user_id, db).await?;
 
     if user_info.balance > FUNDED_BALANCE {
         Ok(())
@@ -167,11 +167,7 @@ async fn user_exists(name: &str, db: &PgPool) -> Result<bool, AppError> {
 fn username_valid(name: &str) -> bool {
     let forbidden = ";/?:@&=+$,#*[]{}()^|";
 
-    if name.chars().all(|c| !forbidden.contains(c)) {
-        true
-    } else {
-        false
-    }
+    name.chars().all(|c| !forbidden.contains(c))
 }
 
 pub async fn user_exists_and_is_active(name: &str, db: &PgPool) -> Result<bool, AppError> {
@@ -202,11 +198,11 @@ pub async fn validate_user_with_credentials(
         return Ok(false);
     }
 
-    if !user_exists_and_is_active(credential_name, &db).await? {
+    if !user_exists_and_is_active(credential_name, db).await? {
         return Ok(false);
     }
 
-    let password = get_password(user_id, &db).await?;
+    let password = get_password(user_id, db).await?;
 
     if !verify_password(credential_password, &password).await? {
         return Ok(false);

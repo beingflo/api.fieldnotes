@@ -77,7 +77,7 @@ pub async fn is_authorized_with_user(
     token: String,
     db: &PgPool,
 ) -> Result<AuthenticatedUser, AppError> {
-    let (authorized_user, created_at) = get_auth_token_info(&token, &db).await?;
+    let (authorized_user, created_at) = get_auth_token_info(&token, db).await?;
 
     let now = Utc::now();
 

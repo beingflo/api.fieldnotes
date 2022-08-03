@@ -32,5 +32,5 @@ pub async fn invalidate_sessions(
     delete_all_auth_tokens(user.user_id, &db).await?;
 
     // Set cookies empty and max-age 0 to force expiration
-    Ok(get_header_with_token(&"", Duration::zero()).into_response())
+    Ok(get_header_with_token("", Duration::zero()).into_response())
 }
