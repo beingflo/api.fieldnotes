@@ -25,6 +25,30 @@
       "nullable": []
     }
   },
+  "14de2d0da70111acbe0a94ea2a76cea776d933b0f7d61f5a699fafed2046849b": {
+    "query": "DELETE\n        FROM transactions\n        WHERE user_id = $1;",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "15edcb127f8f773dadd18189562faf09b1bfe3231821c81008ef0257c909569b": {
+    "query": "DELETE\n        FROM users\n        WHERE id = $1;",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      },
+      "nullable": []
+    }
+  },
   "17c4f70e8f8ad4c47796ce2dc09203477cbc29da02687e5049df40b41129120c": {
     "query": "INSERT INTO shares (token, note_id, user_id, created_at, expires_at, view_count, public)\n        SELECT $1, id, $3, $4, $5, $6, $7\n        FROM notes WHERE token = $2 AND user_id = $3 AND deleted_at IS NULL",
     "describe": {
@@ -424,19 +448,6 @@
       "nullable": [
         null
       ]
-    }
-  },
-  "7940b693621fadacd924cc50942c3bf0923c9ebc8ffd868844b17647446c8904": {
-    "query": "UPDATE users\n        SET deleted_at = $1\n        WHERE id = $2;",
-    "describe": {
-      "columns": [],
-      "parameters": {
-        "Left": [
-          "Timestamptz",
-          "Int4"
-        ]
-      },
-      "nullable": []
     }
   },
   "798c72e0d570b074a11be2e14d82af38211bf6711ba4a2e2d4d40901c20f8296": {
