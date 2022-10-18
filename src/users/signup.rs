@@ -1,6 +1,6 @@
 use crate::{
     error::AppError,
-    users::{user_exists, TransactionEvent, BCRYPT_COST},
+    users::{user_exists, BCRYPT_COST},
 };
 use axum::http::StatusCode;
 use axum::{extract::Extension, Json};
@@ -56,25 +56,12 @@ async fn store_user(
 ) -> Result<(), AppError> {
     let mut tx = db.begin().await?;
 
-    let result = query!(
+    query!(
         "INSERT INTO users (username, password, email, created_at)
-        VALUES ($1, $2, $3, $4)
-        RETURNING id;",
+        VALUES ($1, $2, $3, $4);",
         name,
         password_hash,
         email,
-        time,
-    )
-    .fetch_one(&mut tx)
-    .await?;
-
-    let user_id = result.id;
-
-    query!(
-        "INSERT INTO transactions (user_id, event, date)
-        VALUES ($1, $2, $3);",
-        user_id,
-        TransactionEvent::StartFieldnotes as TransactionEvent,
         time,
     )
     .execute(&mut tx)
