@@ -56,15 +56,15 @@ pub fn get_token_from_header(headers: &HeaderMap) -> Result<String, AppError> {
         .and_then(|value| value.to_str().ok())
         .map(|value| value.to_string())
     {
-        let mut split = cookie.split("=");
+        let mut split = cookie.split('=');
         split.next();
         match split.next() {
-            Some(str) => return Ok(str.into()),
-            None => return Err(AppError::Unauthorized),
+            Some(str) => Ok(str.into()),
+            None => Err(AppError::Unauthorized),
         }
     } else {
-        return Err(AppError::Unauthorized);
-    };
+        Err(AppError::Unauthorized)
+    }
 }
 
 pub fn get_header_with_token(token: &str, duration: Duration) -> HeaderMap {

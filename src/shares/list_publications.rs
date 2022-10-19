@@ -33,7 +33,7 @@ pub async fn list_publications_handler(
 
     let shares = list_publications(&username, &db).await?;
 
-    if shares.len() == 0 {
+    if shares.is_empty() {
         return Err(AppError::NotFound);
     }
 

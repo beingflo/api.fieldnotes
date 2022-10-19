@@ -1,10 +1,5 @@
-use crate::{
-    authentication::AuthenticatedUser,
-    error::AppError,
-    users::{TransactionEvent, UserCredentials},
-};
+use crate::{authentication::AuthenticatedUser, error::AppError, users::UserCredentials};
 use axum::{extract::Extension, Json};
-use chrono::Utc;
 use hyper::StatusCode;
 use sqlx::{query, PgPool};
 
@@ -64,23 +59,19 @@ pub async fn delete_all_user_data(user_id: i32, db: &PgPool) -> Result<(), AppEr
     .execute(&mut tx)
     .await?;
 
-    let now = Utc::now();
-
     query!(
-        "INSERT INTO transactions (user_id, event, date)
-        VALUES ($1, $2, $3);",
+        "DELETE
+        FROM transactions
+        WHERE user_id = $1;",
         user_id,
-        TransactionEvent::PauseFieldnotes as TransactionEvent,
-        now,
     )
     .execute(&mut tx)
     .await?;
 
     query!(
-        "UPDATE users
-        SET deleted_at = $1
-        WHERE id = $2;",
-        now,
+        "DELETE
+        FROM users
+        WHERE id = $1;",
         user_id
     )
     .execute(&mut tx)

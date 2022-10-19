@@ -1,6 +1,5 @@
 use crate::{
     error::AppError,
-    users::is_funded,
     util::{get_token_from_header, truncate_auth_token},
 };
 use axum::{
@@ -32,11 +31,9 @@ where
             .await
             .expect("db missing");
 
-        let token = get_token_from_header(req.headers().expect("Header unavailable"))?;
+        let token = get_token_from_header(req.headers())?;
 
         let user = is_authorized_with_user(token, &db).await?;
-
-        is_funded(user.user_id, &db).await?;
 
         Ok(AuthenticatedFundedUser {
             user_id: user.user_id,
@@ -63,7 +60,7 @@ where
             .await
             .expect("db missing");
 
-        let token = get_token_from_header(req.headers().expect("Header unavailable"))?;
+        let token = get_token_from_header(req.headers())?;
 
         let user = is_authorized_with_user(token, &db).await?;
 
@@ -77,7 +74,7 @@ pub async fn is_authorized_with_user(
     token: String,
     db: &PgPool,
 ) -> Result<AuthenticatedUser, AppError> {
-    let (authorized_user, created_at) = get_auth_token_info(&token, &db).await?;
+    let (authorized_user, created_at) = get_auth_token_info(&token, db).await?;
 
     let now = Utc::now();
 

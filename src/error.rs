@@ -14,9 +14,6 @@ pub enum AppError {
     #[error("NotFound")]
     NotFound,
 
-    #[error("Underfunded")]
-    Underfunded,
-
     #[error("Unauthorized")]
     Unauthorized,
 
@@ -27,12 +24,17 @@ pub enum AppError {
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let status = match self {
-            AppError::DBError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::DBError(error) => {
+                error!("{:?}", error);
+                StatusCode::INTERNAL_SERVER_ERROR
+            }
             AppError::Conflict => StatusCode::CONFLICT,
             AppError::NotFound => StatusCode::NOT_FOUND,
             AppError::Unauthorized => StatusCode::UNAUTHORIZED,
-            AppError::Underfunded => StatusCode::PAYMENT_REQUIRED,
-            AppError::ViolatedAssertion(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::ViolatedAssertion(assertion) => {
+                error!("{}", assertion);
+                StatusCode::INTERNAL_SERVER_ERROR
+            }
         };
 
         status.into_response()

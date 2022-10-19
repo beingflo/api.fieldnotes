@@ -39,16 +39,18 @@ pub async fn save_note_handler(
         content,
     } = note;
 
-    save_note(
+    query!(
+        "INSERT INTO notes (token, user_id, created_at, modified_at, metadata, key, content)
+        VALUES ($1, $2, $3, $4, $5, $6, $7);",
+        token,
         user.user_id,
-        &token,
         now,
         now,
-        &metadata,
-        &key,
-        &content,
-        &db,
+        metadata,
+        key,
+        content,
     )
+    .execute(&*db)
     .await?;
 
     Ok(Json(&SaveNoteResponse {
@@ -57,31 +59,4 @@ pub async fn save_note_handler(
         created_at: now,
     })
     .into_response())
-}
-
-async fn save_note(
-    user_id: i32,
-    token: &str,
-    created_at: DateTime<Utc>,
-    modified_at: DateTime<Utc>,
-    metadata: &str,
-    key: &str,
-    content: &str,
-    db: &PgPool,
-) -> Result<(), AppError> {
-    query!(
-        "INSERT INTO notes (token, user_id, created_at, modified_at, metadata, key, content)
-        VALUES ($1, $2, $3, $4, $5, $6, $7);",
-        token,
-        user_id,
-        created_at,
-        modified_at,
-        metadata,
-        key,
-        content,
-    )
-    .execute(db)
-    .await?;
-
-    Ok(())
 }

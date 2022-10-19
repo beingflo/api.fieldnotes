@@ -45,7 +45,7 @@ pub async fn create_share_handler(
     };
 
     if share_exists(&request.note, &db).await? {
-        return Err(AppError::Conflict.into());
+        return Err(AppError::Conflict);
     }
 
     create_share(

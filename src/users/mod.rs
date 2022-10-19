@@ -6,7 +6,6 @@ mod login;
 mod logout;
 mod salt;
 mod signup;
-use chrono::Utc;
 
 pub use change_password::change_password_handler;
 pub use delete_user::delete_user_handler;
@@ -23,22 +22,6 @@ use log::error;
 use serde::Deserialize;
 use sqlx::{query, PgPool};
 
-/// Balance is stored as CHF * 10^6 to avoid significant rounding errors
-pub const BALANCE_SCALE_FACTOR: i64 = 1_000_000;
-
-/// Default starting balance for new users
-/// Increased for beta TODO revert later
-pub const DEFAULT_BALANCE: i64 = 20_000_000;
-
-/// Once balance falls below this threshold,
-/// account becomes read only
-pub const FUNDED_BALANCE: i64 = -500_000;
-
-/// Cost per day calculated as: CHF 1 / Month = CHF 12 / Year
-/// CHF 12 / 365 days per year = CHF 0.032876 / Day = CHF 0.0013698 / Hour
-pub const HOURLY_BALANCE_COST: i64 = 1_369;
-pub const DAILY_BALANCE_COST: i64 = 32_876;
-
 /// Cost of bcrypt hashing algorithm
 const BCRYPT_COST: u32 = 12;
 
@@ -50,28 +33,9 @@ pub struct UserCredentials {
 }
 
 pub struct UserInfo {
-    balance: i64,
     salt: Option<String>,
     username: String,
     email: Option<String>,
-}
-
-#[derive(sqlx::Type, Debug)]
-#[sqlx(type_name = "event", rename_all = "lowercase")]
-enum TransactionEvent {
-    StartFieldnotes,
-    PauseFieldnotes,
-    AddFunds,
-}
-
-pub async fn is_funded(user_id: i32, db: &PgPool) -> Result<(), AppError> {
-    let user_info = get_user_info(user_id, &db).await?;
-
-    if user_info.balance > FUNDED_BALANCE {
-        Ok(())
-    } else {
-        Err(AppError::Underfunded)
-    }
 }
 
 async fn get_user_info(user_id: i32, db: &PgPool) -> Result<UserInfo, AppError> {
@@ -84,63 +48,7 @@ async fn get_user_info(user_id: i32, db: &PgPool) -> Result<UserInfo, AppError> 
     .fetch_one(db)
     .await?;
 
-    let transactions = query!(
-        r#"SELECT event AS "event!: TransactionEvent", amount, date
-        FROM transactions
-        WHERE user_id = $1
-        ORDER BY date;"#,
-        user_id,
-    )
-    .fetch_all(db)
-    .await?;
-
-    let mut credit = 0;
-    let mut debit = 0;
-
-    let mut start_date = None;
-
-    for transaction in transactions {
-        if matches!(transaction.event, TransactionEvent::AddFunds) {
-            credit += transaction.amount.unwrap();
-        }
-
-        if matches!(transaction.event, TransactionEvent::StartFieldnotes) {
-            if start_date.is_some() {
-                return Err(AppError::ViolatedAssertion(
-                    "Transactions corrupted: Subsquent start dates".into(),
-                ));
-            }
-            start_date = Some(transaction.date);
-        }
-
-        if matches!(transaction.event, TransactionEvent::PauseFieldnotes) {
-            if start_date.is_none() {
-                return Err(AppError::ViolatedAssertion(
-                    "Transactions corrupted: Pause event preceding start event".into(),
-                ));
-            }
-            let duration = transaction.date - start_date.unwrap();
-            let hours = duration.num_hours();
-
-            let cost = hours * HOURLY_BALANCE_COST;
-            debit += cost;
-
-            start_date = None;
-        }
-    }
-
-    if start_date.is_some() {
-        let duration = Utc::now() - start_date.unwrap();
-        let hours = duration.num_hours();
-
-        let cost = hours * HOURLY_BALANCE_COST;
-        debit += cost;
-    }
-
-    let balance = DEFAULT_BALANCE + credit - debit;
-
     Ok(UserInfo {
-        balance,
         salt: info.salt,
         username: info.username,
         email: info.email,
@@ -167,11 +75,7 @@ async fn user_exists(name: &str, db: &PgPool) -> Result<bool, AppError> {
 fn username_valid(name: &str) -> bool {
     let forbidden = ";/?:@&=+$,#*[]{}()^|";
 
-    if name.chars().all(|c| !forbidden.contains(c)) {
-        true
-    } else {
-        false
-    }
+    name.chars().all(|c| !forbidden.contains(c))
 }
 
 pub async fn user_exists_and_is_active(name: &str, db: &PgPool) -> Result<bool, AppError> {
@@ -202,11 +106,11 @@ pub async fn validate_user_with_credentials(
         return Ok(false);
     }
 
-    if !user_exists_and_is_active(credential_name, &db).await? {
+    if !user_exists_and_is_active(credential_name, db).await? {
         return Ok(false);
     }
 
-    let password = get_password(user_id, &db).await?;
+    let password = get_password(user_id, db).await?;
 
     if !verify_password(credential_password, &password).await? {
         return Ok(false);
