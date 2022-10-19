@@ -61,15 +61,6 @@ pub async fn delete_all_user_data(user_id: i32, db: &PgPool) -> Result<(), AppEr
 
     query!(
         "DELETE
-        FROM transactions
-        WHERE user_id = $1;",
-        user_id,
-    )
-    .execute(&mut tx)
-    .await?;
-
-    query!(
-        "DELETE
         FROM users
         WHERE id = $1;",
         user_id
