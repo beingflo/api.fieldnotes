@@ -11,9 +11,6 @@ pub enum AppError {
     #[error("Conflict")]
     Conflict,
 
-    #[error("NotFound")]
-    NotFound,
-
     #[error("Unauthorized")]
     Unauthorized,
 
@@ -29,7 +26,6 @@ impl IntoResponse for AppError {
                 StatusCode::INTERNAL_SERVER_ERROR
             }
             AppError::Conflict => StatusCode::CONFLICT,
-            AppError::NotFound => StatusCode::NOT_FOUND,
             AppError::Unauthorized => StatusCode::UNAUTHORIZED,
             AppError::ViolatedAssertion(assertion) => {
                 error!("{}", assertion);

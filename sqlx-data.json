@@ -37,24 +37,6 @@
     },
     "query": "DELETE\n        FROM users\n        WHERE id = $1;"
   },
-  "17c4f70e8f8ad4c47796ce2dc09203477cbc29da02687e5049df40b41129120c": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Text",
-          "Int4",
-          "Timestamptz",
-          "Timestamptz",
-          "Int4",
-          "Text"
-        ]
-      }
-    },
-    "query": "INSERT INTO shares (token, note_id, user_id, created_at, expires_at, view_count, public)\n        SELECT $1, id, $3, $4, $5, $6, $7\n        FROM notes WHERE token = $2 AND user_id = $3 AND deleted_at IS NULL"
-  },
   "1f14bec8f7a87a38a51039b7d11e40354df9309f01cd0847bd111043c7d3cc38": {
     "describe": {
       "columns": [],
@@ -123,6 +105,23 @@
       }
     },
     "query": "SELECT password\n        FROM users \n        WHERE id = $1;"
+  },
+  "42451d752040a5f8e5258dfd9f8dcce8579998ca3ddaf2e9db9fb88bad1def25": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text",
+          "Int4",
+          "Timestamptz",
+          "Timestamptz",
+          "Int4"
+        ]
+      }
+    },
+    "query": "INSERT INTO shares (token, note_id, user_id, created_at, expires_at, view_count)\n        SELECT $1, id, $3, $4, $5, $6\n        FROM notes WHERE token = $2 AND user_id = $3 AND deleted_at IS NULL"
   },
   "4ba3c91696ad6fe337e3084f6e4b843137491ae3c1706b2c657f6c49db679883": {
     "describe": {
@@ -430,6 +429,50 @@
     },
     "query": "UPDATE notes\n        SET modified_at = $1, metadata = $2, key = $3, content = $4\n        WHERE user_id = $5 AND token = $6 AND deleted_at IS NULL"
   },
+  "7e59de1376dffd156dff95cdfa100265bf79b86174acbd997c9ef82bf0b466f2": {
+    "describe": {
+      "columns": [
+        {
+          "name": "token",
+          "ordinal": 0,
+          "type_info": "Text"
+        },
+        {
+          "name": "expires_at",
+          "ordinal": 1,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "note_token",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "view_count",
+          "ordinal": 3,
+          "type_info": "Int4"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 4,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        true,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "SELECT shares.token, shares.expires_at, notes.token AS note_token, shares.view_count, shares.created_at\n        FROM shares \n        INNER JOIN notes ON shares.note_id = notes.id\n        WHERE shares.user_id = $1;"
+  },
   "7e6b584a58bf454850e6d26f6ea5a13d6370f8b89c2009bce77be669d14c03a8": {
     "describe": {
       "columns": [],
@@ -526,56 +569,6 @@
       }
     },
     "query": "SELECT username, salt, email\n        FROM users \n        WHERE id = $1;"
-  },
-  "a13a2760e5284ec93a4bd7d392424200615fd3bdd695c10e6db898f7d59bf2a3": {
-    "describe": {
-      "columns": [
-        {
-          "name": "token",
-          "ordinal": 0,
-          "type_info": "Text"
-        },
-        {
-          "name": "created_at",
-          "ordinal": 1,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "modified_at",
-          "ordinal": 2,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "metadata",
-          "ordinal": 3,
-          "type_info": "Text"
-        },
-        {
-          "name": "key",
-          "ordinal": 4,
-          "type_info": "Text"
-        },
-        {
-          "name": "public",
-          "ordinal": 5,
-          "type_info": "Text"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        true
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      }
-    },
-    "query": "SELECT shares.token, notes.created_at, notes.modified_at, notes.metadata, notes.key, shares.public\n        FROM shares \n        INNER JOIN notes ON shares.note_id = notes.id\n        INNER JOIN users ON notes.user_id = users.id\n        WHERE users.username = $1 AND shares.public IS NOT NULL"
   },
   "a95edd7a20cbdf64983e13bd9c3846b504bf924f84880bd1e7052039ce50bb3b": {
     "describe": {
@@ -716,56 +709,6 @@
       }
     },
     "query": "SELECT token, created_at, modified_at, metadata, key\n        FROM notes\n        WHERE user_id = $1 AND deleted_at IS NULL"
-  },
-  "e6135ef7b3a73db8e9105dff0b05c30235cf2af6cc1bbd1ff91249efa37f42b3": {
-    "describe": {
-      "columns": [
-        {
-          "name": "token",
-          "ordinal": 0,
-          "type_info": "Text"
-        },
-        {
-          "name": "expires_at",
-          "ordinal": 1,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "note_token",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "view_count",
-          "ordinal": 3,
-          "type_info": "Int4"
-        },
-        {
-          "name": "created_at",
-          "ordinal": 4,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "public",
-          "ordinal": 5,
-          "type_info": "Text"
-        }
-      ],
-      "nullable": [
-        false,
-        true,
-        false,
-        false,
-        false,
-        true
-      ],
-      "parameters": {
-        "Left": [
-          "Int4"
-        ]
-      }
-    },
-    "query": "SELECT shares.token, shares.expires_at, notes.token AS note_token, shares.view_count, shares.created_at, shares.public\n        FROM shares \n        INNER JOIN notes ON shares.note_id = notes.id\n        WHERE shares.user_id = $1;"
   },
   "f86d7a85f0e9f001f5bcc771d0ee4dc5729e964d38352ff591e8c3b5794bfeff": {
     "describe": {

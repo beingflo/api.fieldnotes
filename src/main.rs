@@ -25,8 +25,7 @@ use crate::{
         undelete_note_handler, update_note_handler,
     },
     shares::{
-        access_share_handler, create_share_handler, delete_share_handler,
-        list_publications_handler, list_shares_handler,
+        access_share_handler, create_share_handler, delete_share_handler, list_shares_handler,
     },
     users::{
         change_password_handler, delete_user_handler, invalidate_sessions, login_handler,
@@ -96,7 +95,6 @@ async fn main() {
         .route("/shares", get(list_shares_handler))
         .route("/shares/:token", delete(delete_share_handler))
         .route("/shares/:token", get(access_share_handler))
-        .route("/publications/:username", get(list_publications_handler))
         .layer(Extension(db))
         .layer(
             CorsLayer::new()
