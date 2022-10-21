@@ -12,7 +12,6 @@ use sqlx::{query, PgPool};
 #[derive(Deserialize)]
 pub struct CreateShareRequest {
     note: String,
-    public: Option<String>,
     expires_in: Option<i64>,
 }
 
@@ -21,7 +20,6 @@ pub struct CreateShareRequest {
 pub struct CreateShareResponse {
     token: String,
     note: String,
-    public: Option<String>,
     created_at: DateTime<Utc>,
     expires_at: Option<DateTime<Utc>>,
 }
@@ -48,23 +46,13 @@ pub async fn create_share_handler(
         return Err(AppError::Conflict);
     }
 
-    create_share(
-        &token,
-        &request.note,
-        user.user_id,
-        &request.public,
-        now,
-        expires_at,
-        &db,
-    )
-    .await?;
+    create_share(&token, &request.note, user.user_id, now, expires_at, &db).await?;
 
     Ok(Json(&CreateShareResponse {
         token,
         created_at: now,
         expires_at,
         note: request.note,
-        public: request.public,
     })
     .into_response())
 }
@@ -73,14 +61,13 @@ async fn create_share(
     token: &str,
     note: &str,
     user_id: i32,
-    public: &Option<String>,
     created_at: DateTime<Utc>,
     expires_at: Option<DateTime<Utc>>,
     db: &PgPool,
 ) -> Result<(), AppError> {
     let row = query!(
-        "INSERT INTO shares (token, note_id, user_id, created_at, expires_at, view_count, public)
-        SELECT $1, id, $3, $4, $5, $6, $7
+        "INSERT INTO shares (token, note_id, user_id, created_at, expires_at, view_count)
+        SELECT $1, id, $3, $4, $5, $6
         FROM notes WHERE token = $2 AND user_id = $3 AND deleted_at IS NULL",
         token,
         note,
@@ -88,7 +75,6 @@ async fn create_share(
         created_at,
         expires_at,
         0,
-        *public,
     )
     .execute(db)
     .await?;
