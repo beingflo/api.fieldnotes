@@ -17,7 +17,6 @@ use crate::error::AppError;
 /// Key type
 #[derive(Deserialize)]
 pub struct KeyJson {
-    iv_metadata: String,
     iv_content: String,
 }
 
