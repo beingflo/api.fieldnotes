@@ -2,4 +2,5 @@
 
 .env
 .env.prod
+.env.prod.backup
 fieldnotes.log
