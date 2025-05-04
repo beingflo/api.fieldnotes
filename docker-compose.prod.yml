@@ -28,6 +28,9 @@ services:
 
   pg_backup_s3:
     image: "ghcr.io/beingflo/postgres-backup-s3:1.2"
+    container_name: fieldnotes-backup
+    depends_on:
+      - fieldnotes-db
     restart: unless-stopped
     env_file: ".env.prod.backup"
     networks:
